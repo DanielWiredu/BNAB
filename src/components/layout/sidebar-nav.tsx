@@ -24,6 +24,7 @@ import {
 
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/features/auth/permission-context";
+import { COMPANY_NAME } from "@/lib/branding";
 import { NAV, isGroup, type NavItem, type NavGroup, type NavLeaf } from "./nav-items";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -62,7 +63,7 @@ export function SidebarNav() {
   return (
     <aside className="flex h-screen w-64 shrink-0 flex-col bg-[var(--sidebar)] text-[var(--sidebar-foreground)]">
       <div className="flex h-16 items-center gap-2 px-5 text-lg font-bold tracking-tight">
-        GDLC <span className="text-[var(--primary)]">LAMS</span>
+        {COMPANY_NAME} <span className="text-[var(--primary)]">LAMS</span>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 pb-6">
         <p className="px-2 py-2 text-xs font-semibold uppercase tracking-wider text-[var(--sidebar-muted)]">

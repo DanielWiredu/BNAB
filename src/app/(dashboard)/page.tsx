@@ -3,6 +3,7 @@ import { Permissions as P } from "@/server/auth/permissions";
 import { PageHeader } from "@/components/layout/page-header";
 import { getOperationalDashboard } from "@/features/dashboard/queries";
 import { OperationalDashboardView } from "@/features/dashboard/operational-dashboard";
+import { APP_NAME } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Dashboard" description="GPHA labour requests overview — GDLC LAMS" />
+      <PageHeader title="Dashboard" description={`GPHA labour requests overview — ${APP_NAME}`} />
       <OperationalDashboardView data={data} filters={{ from: fromStr, to: toStr, unit }} />
     </div>
   );

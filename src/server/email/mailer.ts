@@ -1,6 +1,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 
 import { logger } from "@/lib/logger";
+import { APP_NAME } from "@/lib/branding";
 
 /**
  * Nodemailer transport over the org's existing SMTP relay (ADR-006).
@@ -47,7 +48,7 @@ export interface SendMailInput {
 
 /** Send one email now (called by the email worker). Throws on failure so BullMQ retries. */
 export async function sendMail(input: SendMailInput): Promise<void> {
-  const senderName = process.env.SMTP_SENDER_NAME || "GDLC LAMS";
+  const senderName = process.env.SMTP_SENDER_NAME || APP_NAME;
   const from = `"${senderName}" <${process.env.SMTP_USER ?? "noreply@xcelisolutions.com"}>`;
   const info = await getMailTransport().sendMail({
     from,

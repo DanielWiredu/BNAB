@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/db/prisma";
 import { requisitionSchema, hoursUpdateSchema, addSubStaffSchema } from "./schema";
-import { searchActiveWorkers, getDailyReq, listSubStaff, type WorkerHit } from "./queries";
+import { searchActiveWorkers, getDailyReq, listSubStaff, resolveLookupNames, type WorkerHit } from "./queries";
 import {
   spGetNewDailyReqNo,
   spAddDailyReq,
@@ -236,6 +236,14 @@ export interface HoursReq {
   normalHours: number;
   overtimeHours: number;
   subStaff: Record<string, unknown>[];
+  dleCompany: string | null;
+  vessel: string | null;
+  reportingPoint: string | null;
+  location: string | null;
+  cargo: string | null;
+  gang: string | null;
+  job: string | null;
+  gphaRequestId: string | null;
 }
 
 /** Look up a requisition (by ReqNo or GPHA id) for the hours-update panel. */
@@ -246,7 +254,17 @@ export async function loadReqForHours(reqNo: string): Promise<HoursReq | null> {
   if (!term) return null;
   const req = await getDailyReq(term);
   if (!req) return null;
-  const subStaff = await listSubStaff(req.reqNo);
+  const [subStaff, names] = await Promise.all([
+    listSubStaff(req.reqNo),
+    resolveLookupNames({
+      dlecodeCompanyId: req.dlecodeCompanyId,
+      vesselId: req.vesselberthId,
+      reportingPointId: req.reportpointId,
+      locationId: req.locationId,
+      cargoId: req.cargoId,
+      gangId: req.gangId,
+    }),
+  ]);
   return {
     reqNo: req.reqNo,
     date: req.date,
@@ -256,6 +274,9 @@ export async function loadReqForHours(reqNo: string): Promise<HoursReq | null> {
     normalHours: req.normal,
     overtimeHours: req.overtime,
     subStaff,
+    ...names,
+    job: req.job ?? null,
+    gphaRequestId: req.gphaRequestId ?? null,
   };
 }
 

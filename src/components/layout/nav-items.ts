@@ -52,14 +52,7 @@ export const NAV: NavItem[] = [
           { label: "Approved Requests", href: "/clms/approved", permission: P.Clms.View },
         ],
       },
-      { label: "ID Cards", href: "/workers/id-cards", permission: P.Workers.IdCards },
     ],
-  },
-  {
-    label: "Aged Workers",
-    href: "/workers/aged",
-    icon: "inbox",
-    permission: P.Workers.View,
   },
   {
     label: "Audit",

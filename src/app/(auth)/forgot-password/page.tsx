@@ -8,8 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ForgotPasswordForm } from "@/features/account/forgot-password-form";
+import { APP_NAME } from "@/lib/branding";
 
-export const metadata: Metadata = { title: "Forgot password — GDLC LAMS" };
+export const metadata: Metadata = { title: `Forgot password — ${APP_NAME}` };
 
 export default function ForgotPasswordPage() {
   return (

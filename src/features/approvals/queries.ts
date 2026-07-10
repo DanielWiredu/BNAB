@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/db/prisma";
-import { getDailyReq, listSubStaff } from "@/features/daily-req/queries";
+import { getDailyReq, listSubStaff, resolveLookupNames } from "@/features/daily-req/queries";
 import { getMonthlyReq } from "@/features/monthly-req/queries";
 
 export type Period = "daily" | "weekly" | "monthly";
@@ -18,6 +18,15 @@ export interface ApprovalSummary {
   normalHours: number | null;
   childCount: number;
   childRows: Record<string, unknown>[];
+  /** Extra requisition detail — only populated where the period's header carries it. */
+  dleCompany: string | null;
+  vessel: string | null;
+  reportingPoint: string | null;
+  location: string | null;
+  cargo: string | null;
+  gang: string | null;
+  job: string | null;
+  gphaRequestId: string | null;
 }
 
 /** Weekly requisition header for approval (joins the worker name). */
@@ -29,6 +38,11 @@ async function loadWeekly(reqNo: string): Promise<ApprovalSummary | null> {
     prisma.vwSubStaffWreq.findMany({ where: { reqNo }, orderBy: { transDate: "asc" } }),
   ]);
   const name = worker ? `${worker.sname ?? ""} ${worker.oname ?? ""}`.trim() : r.workerId;
+  const names = await resolveLookupNames({
+    dlecodeCompanyId: r.dlecodeCompanyId,
+    reportingPointId: r.reportpointId,
+    locationId: r.locationId,
+  });
   return {
     period: "weekly",
     reqNo: r.reqNo,
@@ -40,6 +54,9 @@ async function loadWeekly(reqNo: string): Promise<ApprovalSummary | null> {
     normalHours: null,
     childCount: workDays.length,
     childRows: workDays as unknown as Record<string, unknown>[],
+    ...names,
+    job: r.job ?? null,
+    gphaRequestId: null,
   };
 }
 
@@ -54,7 +71,17 @@ export async function loadForApproval(
   if (period === "daily") {
     const req = await getDailyReq(term);
     if (!req) return null;
-    const workers = await listSubStaff(req.reqNo);
+    const [workers, names] = await Promise.all([
+      listSubStaff(req.reqNo),
+      resolveLookupNames({
+        dlecodeCompanyId: req.dlecodeCompanyId,
+        vesselId: req.vesselberthId,
+        reportingPointId: req.reportpointId,
+        locationId: req.locationId,
+        cargoId: req.cargoId,
+        gangId: req.gangId,
+      }),
+    ]);
     return {
       period,
       reqNo: req.reqNo,
@@ -66,6 +93,9 @@ export async function loadForApproval(
       normalHours: req.normal,
       childCount: workers.length,
       childRows: workers,
+      ...names,
+      job: req.job ?? null,
+      gphaRequestId: req.gphaRequestId ?? null,
     };
   }
 
@@ -73,6 +103,11 @@ export async function loadForApproval(
 
   const req = await getMonthlyReq(term);
   if (!req) return null;
+  const names = await resolveLookupNames({
+    dlecodeCompanyId: req.companyId,
+    reportingPointId: req.reportingPointId,
+    locationId: req.locationId,
+  });
   return {
     period: "monthly",
     reqNo: req.requestNo,
@@ -84,5 +119,8 @@ export async function loadForApproval(
     normalHours: null,
     childCount: 0,
     childRows: [],
+    ...names,
+    job: req.jobDescription ?? null,
+    gphaRequestId: null,
   };
 }

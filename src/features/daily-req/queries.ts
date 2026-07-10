@@ -7,6 +7,44 @@ export interface Option {
   label: string;
 }
 
+export interface LookupIds {
+  dlecodeCompanyId?: number | null;
+  vesselId?: number | null;
+  reportingPointId?: number | null;
+  locationId?: number | null;
+  cargoId?: number | null;
+  gangId?: number | null;
+}
+
+export interface LookupNames {
+  dleCompany: string | null;
+  vessel: string | null;
+  reportingPoint: string | null;
+  location: string | null;
+  cargo: string | null;
+  gang: string | null;
+}
+
+/** Resolve a requisition header's lookup ids to their display names (only what's applicable is passed in). */
+export async function resolveLookupNames(ids: LookupIds): Promise<LookupNames> {
+  const [company, vessel, reportingPoint, location, cargo, gang] = await Promise.all([
+    ids.dlecodeCompanyId ? prisma.tblDLECompany.findUnique({ where: { dlecodeCompanyId: ids.dlecodeCompanyId } }) : null,
+    ids.vesselId ? prisma.tblVessel.findUnique({ where: { vesselId: ids.vesselId } }) : null,
+    ids.reportingPointId ? prisma.tblReportingPoint.findUnique({ where: { reportingPointId: ids.reportingPointId } }) : null,
+    ids.locationId ? prisma.tblLocation.findUnique({ where: { locationId: ids.locationId } }) : null,
+    ids.cargoId ? prisma.tblCargo.findUnique({ where: { cargoId: ids.cargoId } }) : null,
+    ids.gangId ? prisma.tblGangs.findUnique({ where: { gangId: ids.gangId } }) : null,
+  ]);
+  return {
+    dleCompany: company?.dlecodeCompanyName ?? null,
+    vessel: vessel?.vesselName ?? null,
+    reportingPoint: reportingPoint?.reportingPoint ?? null,
+    location: location?.location ?? null,
+    cargo: cargo?.cargoName ?? null,
+    gang: gang?.gangName ?? null,
+  };
+}
+
 /** Requisition list (vwDailyReq), newest first, optional search on ReqNo/GPHA id. */
 export async function listDailyReqs(search = ""): Promise<Record<string, unknown>[]> {
   const term = search.trim();

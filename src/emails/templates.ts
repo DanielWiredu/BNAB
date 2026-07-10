@@ -3,7 +3,7 @@
  * render identically from the worker process. Each returns { subject, html }.
  */
 
-const BRAND = "GDLC LAMS";
+import { APP_NAME as BRAND } from "@/lib/branding";
 
 function layout(title: string, body: string): string {
   return `<!doctype html>

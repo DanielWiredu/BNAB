@@ -124,6 +124,14 @@ export function ApprovalPanel({
             {summary.normalHours != null && <Info label="Normal Hrs" value={String(summary.normalHours)} />}
             {period !== "monthly" && <Info label={period === "daily" ? "Workers" : "Work Days"} value={String(summary.childCount)} />}
             {summary.stored && <Info label="Stored" value="Yes" />}
+            {summary.dleCompany && <Info label="DLE Company" value={summary.dleCompany} />}
+            {summary.vessel && <Info label="Vessel" value={summary.vessel} />}
+            {summary.reportingPoint && <Info label="Reporting Point" value={summary.reportingPoint} />}
+            {summary.location && <Info label="Location" value={summary.location} />}
+            {summary.cargo && <Info label="Cargo" value={summary.cargo} />}
+            {summary.gang && <Info label="Gang" value={summary.gang} />}
+            {summary.job && <Info label="Job Description" value={summary.job} />}
+            {summary.gphaRequestId && <Info label="GPHA Request ID" value={summary.gphaRequestId} />}
           </div>
 
           {columns.length > 0 && (

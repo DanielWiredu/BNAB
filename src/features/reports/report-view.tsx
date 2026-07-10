@@ -77,10 +77,7 @@ export function ReportView({
     <div className="report-sheet mx-auto max-w-[1200px] p-6">
       <header className="mb-4 text-center">
         <div className="text-lg font-bold">{REPORT_HEADER.company}</div>
-        <div className="text-base font-semibold">
-          {report.title}
-          {REPORT_HEADER.branch ? ` — ${REPORT_HEADER.branch}` : ""}
-        </div>
+        <div className="text-base font-semibold">{report.title}</div>
         {subtitle && <div className="text-sm italic">{subtitle}</div>}
       </header>
 
@@ -116,7 +113,7 @@ export function ReportView({
       </table>
 
       <footer className="mt-6 flex justify-between text-xs text-[#667085]">
-        <span>{REPORT_HEADER.company} · LAMS</span>
+        <span>{REPORT_HEADER.company}</span>
         <span>{rows.length} record(s)</span>
       </footer>
     </div>

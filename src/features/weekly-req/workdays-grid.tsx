@@ -60,8 +60,12 @@ export function WorkDaysGrid({
 
   async function onToggle(row: Row) {
     const res = await toggleWorkDayTransport(Number(row.autoId), String(row.transport ?? "*"), reqNo);
-    if (res.ok) router.refresh();
-    else toast.error(res.error);
+    if (res.ok) {
+      toast.success("Transport updated.");
+      router.refresh();
+    } else {
+      toast.error(res.error);
+    }
   }
 
   async function onDelete() {

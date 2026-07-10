@@ -14,8 +14,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import { setWorkerStatus } from "./actions";
 import { WORKER_STATUS } from "./schema";
+import { StatusBadge, statusColorClass } from "./status-badge";
 
 type Row = Record<string, unknown>;
 
@@ -62,7 +64,7 @@ export function StatusManager({ data }: { data: Row[] }) {
       {
         accessorKey: "workerStatus",
         header: "Status",
-        cell: ({ getValue }) => String(getValue() ?? "—"),
+        cell: ({ getValue }) => <StatusBadge value={getValue() as string | null} />,
       },
       {
         id: "actions",
@@ -91,18 +93,24 @@ export function StatusManager({ data }: { data: Row[] }) {
             </DialogTitle>
           </DialogHeader>
 
-          <p className="text-sm text-[var(--muted-foreground)]">
-            Current status: {target ? String(target.workerStatus ?? WORKER_STATUS[String(target.flags)] ?? "—") : "—"}
-          </p>
+          <div className="flex items-center gap-2 text-sm text-[var(--muted-foreground)]">
+            Current status:
+            <StatusBadge value={target ? String(target.workerStatus ?? WORKER_STATUS[String(target.flags)] ?? "") : ""} />
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {STATUS_OPTIONS.map((o) => (
               <Button
                 key={o.flag}
                 type="button"
-                variant={flag === o.flag ? "default" : "outline"}
+                variant="outline"
                 size="sm"
                 onClick={() => setFlag(o.flag)}
+                className={cn(
+                  statusColorClass(o.flag),
+                  "border-transparent hover:opacity-80",
+                  flag === o.flag && "ring-2 ring-offset-1 ring-[var(--ring)] font-semibold",
+                )}
               >
                 {o.label}
               </Button>

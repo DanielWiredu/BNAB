@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CostSheetDialog, type CostSheetOptions, type PendingRequestLite } from "./cost-sheet-dialog";
+import { COMPANY_NAME } from "@/lib/branding";
 
 type Row = Record<string, unknown>;
 export type ClmsVariant = "pending" | "approved" | "all";
@@ -103,8 +104,8 @@ export function ClmsList({
         { accessorKey: "costSheetNo", header: "Cost Sheet" },
         { accessorKey: "preparedOn", header: "Prepared On", cell: ({ getValue }) => fmtDate(getValue()) },
         { accessorKey: "gphaApprovedDate", header: "GPHA Approved", cell: ({ getValue }) => fmtDate(getValue()) },
-        { accessorKey: "gdlcApproved", header: "GDLC Approved", cell: ({ getValue }) => yesNo(getValue()) },
-        { accessorKey: "gdlcApprovedDate", header: "GDLC Approved Date", cell: ({ getValue }) => fmtDate(getValue()) },
+        { accessorKey: "gdlcApproved", header: `${COMPANY_NAME} Approved`, cell: ({ getValue }) => yesNo(getValue()) },
+        { accessorKey: "gdlcApprovedDate", header: `${COMPANY_NAME} Approved Date`, cell: ({ getValue }) => fmtDate(getValue()) },
       );
     }
 
@@ -113,7 +114,7 @@ export function ClmsList({
         { accessorKey: "hasCostSheet", header: "Has Cost Sheet", cell: ({ getValue }) => yesNo(getValue()) },
         { accessorKey: "costSheetNo", header: "Cost Sheet" },
         { accessorKey: "gphaApproved", header: "GPHA Approved", cell: ({ getValue }) => yesNo(getValue()) },
-        { accessorKey: "gdlcApproved", header: "GDLC Approved", cell: ({ getValue }) => yesNo(getValue()) },
+        { accessorKey: "gdlcApproved", header: `${COMPANY_NAME} Approved`, cell: ({ getValue }) => yesNo(getValue()) },
       );
     }
 
@@ -165,7 +166,7 @@ export function ClmsList({
               checked={gdlcApproved}
               onChange={(e) => setGdlcApproved(e.target.checked)}
             />
-            GDLC Approved
+            {COMPANY_NAME} Approved
           </label>
         )}
         <Button onClick={applyFilters}>Apply</Button>

@@ -8,8 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { SetPasswordForm } from "@/features/account/set-password-form";
+import { APP_NAME } from "@/lib/branding";
 
-export const metadata: Metadata = { title: "Reset password — GDLC LAMS" };
+export const metadata: Metadata = { title: `Reset password — ${APP_NAME}` };
 
 export default async function ResetPasswordPage({
   searchParams,

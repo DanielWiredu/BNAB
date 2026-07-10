@@ -52,7 +52,6 @@ export async function GET(
 
   const buffer = await buildWorkbook(report, rows, {
     company: REPORT_HEADER.company,
-    branch: REPORT_HEADER.branch,
     title,
     subtitle,
   });

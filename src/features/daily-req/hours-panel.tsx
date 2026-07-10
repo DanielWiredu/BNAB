@@ -88,6 +88,14 @@ export function HoursPanel() {
             <Info label="Date" value={fmtDate(req.date)} />
             <Info label="Approved" value={req.approved ? "Yes" : "No"} />
             <Info label="Allocated" value={String(req.subStaff.length)} />
+            {req.dleCompany && <Info label="DLE Company" value={req.dleCompany} />}
+            {req.vessel && <Info label="Vessel" value={req.vessel} />}
+            {req.reportingPoint && <Info label="Reporting Point" value={req.reportingPoint} />}
+            {req.location && <Info label="Location" value={req.location} />}
+            {req.cargo && <Info label="Cargo" value={req.cargo} />}
+            {req.gang && <Info label="Gang" value={req.gang} />}
+            {req.job && <Info label="Job Description" value={req.job} />}
+            {req.gphaRequestId && <Info label="GPHA Request ID" value={req.gphaRequestId} />}
           </div>
 
           <div className="grid grid-cols-2 gap-4 rounded-lg border border-[var(--border)] p-4 sm:grid-cols-4">

@@ -71,6 +71,9 @@ export function UserPermissions({
     const res = await setPermission(userId, permission, op);
     setPending(null);
     if (res.ok) {
+      const message =
+        op === "grant" ? "Permission granted." : op === "revoke" ? "Permission revoked." : "Permission reset to default.";
+      toast.success(message);
       router.refresh();
     } else {
       toast.error(res.error);
@@ -202,24 +205,24 @@ function PermAction({
   if (source === "role")
     return (
       <Button variant="ghost" size="sm" disabled={disabled} onClick={onRevoke} className="text-[var(--destructive)]">
-        Revoke
+        {disabled ? "Revoking…" : "Revoke"}
       </Button>
     );
   if (source === "revoke")
     return (
       <Button variant="ghost" size="sm" disabled={disabled} onClick={onReset}>
-        Restore
+        {disabled ? "Restoring…" : "Restore"}
       </Button>
     );
   if (source === "grant")
     return (
       <Button variant="ghost" size="sm" disabled={disabled} onClick={onReset}>
-        Remove Grant
+        {disabled ? "Removing…" : "Remove Grant"}
       </Button>
     );
   return (
     <Button variant="ghost" size="sm" disabled={disabled} onClick={onGrant} className="text-blue-500">
-      Grant
+      {disabled ? "Granting…" : "Grant"}
     </Button>
   );
 }

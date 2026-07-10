@@ -7,7 +7,6 @@ import { excelValue, sumTotals } from "./format";
 
 interface WorkbookMeta {
   company: string;
-  branch: string;
   title: string;
   subtitle: string;
 }
@@ -43,7 +42,7 @@ export async function buildWorkbook(
   ws.getCell(1, 1).value = meta.company;
   ws.getCell(1, 1).font = { bold: true, size: 14 };
   ws.mergeCells(2, 1, 2, colCount);
-  ws.getCell(2, 1).value = `${meta.title}${meta.branch ? ` — ${meta.branch}` : ""}`;
+  ws.getCell(2, 1).value = meta.title;
   ws.getCell(2, 1).font = { bold: true, size: 12 };
   if (meta.subtitle) {
     ws.mergeCells(3, 1, 3, colCount);

@@ -9,6 +9,8 @@
  * render it as a print-CSS page, with the same data streamed to Excel/CSV.
  */
 
+import { APP_NAME } from "@/lib/branding";
+
 /** How a column's raw value is formatted for display / export. */
 export type ColumnFormat =
   | "text"
@@ -75,8 +77,7 @@ export interface ReportDef {
   query: (params: Record<string, string>) => Promise<ReportRow[]>;
 }
 
-/** Company/branch header shown at the top of every report (was on the .rpt). */
+/** Company header shown at the top of every report (was on the .rpt). */
 export const REPORT_HEADER = {
-  company: "Ghana Dockyard Labour Company",
-  branch: "Tema",
+  company: APP_NAME,
 } as const;

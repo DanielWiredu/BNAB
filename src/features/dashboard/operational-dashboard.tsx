@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { OperationalDashboard } from "./queries";
+import { COMPANY_NAME } from "@/lib/branding";
 
 const BAR_PALETTE = ["#594AE2", "#FF4081", "#1EC8A0", "#FF9800", "#448AFF", "#9C27B0", "#FF5722", "#607D8B"];
 const COST_PALETTE = ["#1EC8A0", "#FF9800"];
@@ -131,7 +132,7 @@ export function OperationalDashboardView({
         <Kpi icon={FileText} value={kpi.withCostSheet} label="With Cost Sheet" accent="#1EC8A0" />
         <Kpi icon={Clock} value={kpi.pendingCostSheet} label="Pending Cost Sheet" accent="#FF9800" />
         <Kpi icon={CheckCircle2} value={kpi.gphaApproved} label="GPHA Approved" accent="#448AFF" />
-        <Kpi icon={ShieldCheck} value={kpi.gdlcApproved} label="GDLC Approved" accent="#9C27B0" />
+        <Kpi icon={ShieldCheck} value={kpi.gdlcApproved} label={`${COMPANY_NAME} Approved`} accent="#9C27B0" />
         <Kpi icon={Users} value={kpi.workersTotal} label={`Workers (${kpi.workersActive} active)`} accent="#FF4081" />
       </div>
 

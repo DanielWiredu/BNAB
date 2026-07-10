@@ -24,7 +24,8 @@ import {
   fetchTradeTypeOptions,
   fetchBankBranchOptions,
 } from "./actions";
-import { workerSchema, WORKER_STATUS } from "./schema";
+import { workerSchema } from "./schema";
+import { StatusBadge } from "./status-badge";
 import type { Option } from "./queries";
 
 type Values = Record<string, unknown>;
@@ -207,7 +208,7 @@ export function WorkerForm({
       {/* Identity */}
       <Section title="Registration">
         <Field name="registrationDate" label="Registration Date" type="date" form={form} />
-        <Field name="workerId" label="Worker ID" form={form} disabled={isEdit} />
+        <Field name="workerId" label="Worker ID" form={form} disabled={isEdit} maxLength={10} />
         <SelectField name="gender" label="Gender" form={form} options={[
           { value: "M", label: "Male" },
           { value: "F", label: "Female" },
@@ -219,9 +220,7 @@ export function WorkerForm({
         ]} />
         {isEdit && worker && (
           <div className="col-span-2 flex items-center gap-3 self-end pb-2 text-sm sm:col-span-1">
-            <span className="rounded-md bg-[var(--muted)] px-2 py-1">
-              Status: {WORKER_STATUS[worker.flags ?? "NAY"] ?? "Unknown"}
-            </span>
+            <StatusBadge value={worker.flags ?? "NAY"} />
             {worker.age != null && (
               <span className="rounded-md bg-[var(--muted)] px-2 py-1">Age: {worker.age}</span>
             )}
@@ -382,6 +381,7 @@ function Field({
   type = "text",
   disabled,
   placeholder,
+  maxLength,
 }: {
   name: string;
   label: string;
@@ -389,10 +389,18 @@ function Field({
   type?: string;
   disabled?: boolean;
   placeholder?: string;
+  maxLength?: number;
 }) {
   return (
     <FieldWrap name={name} label={label} form={form}>
-      <Input id={name} type={type} disabled={disabled} placeholder={placeholder} {...form.register(name)} />
+      <Input
+        id={name}
+        type={type}
+        disabled={disabled}
+        placeholder={placeholder}
+        maxLength={maxLength}
+        {...form.register(name)}
+      />
     </FieldWrap>
   );
 }

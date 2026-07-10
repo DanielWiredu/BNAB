@@ -2,6 +2,7 @@ import "server-only";
 
 import { prisma } from "@/db/prisma";
 import { query } from "@/db/mssql";
+import { COMPANY_NAME } from "@/lib/branding";
 
 /**
  * Operational dashboard — faithful port of LAMS.Server `Index.razor`
@@ -151,7 +152,7 @@ export async function getOperationalDashboard(
     ],
     approval: [
       { name: "GPHA Approved", value: gphaApproved },
-      { name: "GDLC Approved", value: gdlcApproved },
+      { name: `${COMPANY_NAME} Approved`, value: gdlcApproved },
       { name: "Pending", value: notApproved },
     ],
     unitBreakdown,

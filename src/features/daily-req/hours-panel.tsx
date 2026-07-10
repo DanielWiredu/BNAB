@@ -58,13 +58,21 @@ export function HoursPanel() {
     if (!req) return;
     setSaving(true);
     const res = await updateHours({ reqNo: req.reqNo, normalHours: normal, overtimeHours: overtime });
-    setSaving(false);
     if (res.ok) {
+      // Re-fetch so the allocated-workers grid reflects the updated hours.
+      const refreshed = await loadReqForHours(req.reqNo);
+      if (refreshed) {
+        setReq(refreshed);
+        setNormal(String(refreshed.normalHours));
+        setOvertime(String(refreshed.overtimeHours));
+      } else {
+        setReq({ ...req, normalHours: Number(normal), overtimeHours: Number(overtime) });
+      }
       toast.success("Hours updated.");
-      setReq({ ...req, normalHours: Number(normal), overtimeHours: Number(overtime) });
     } else {
       toast.error(res.error);
     }
+    setSaving(false);
   }
 
   return (

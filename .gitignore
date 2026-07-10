@@ -1,0 +1,31 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# env & secrets
+.env
+.env*.local
+
+# prisma generated client (if output to repo)
+/src/db/generated
+
+# logs
+*.log
+npm-debug.log*
+
+# misc
+.DS_Store
+*.pem
+/coverage
+.vscode/*
+!.vscode/extensions.json
+.idea

@@ -1,0 +1,760 @@
+// GDLC LAMS — Prisma schema.
+//
+// IMPORTANT: The SQL Server database is AUTHORITATIVE and SHARED with the legacy
+// apps. Do NOT run `prisma migrate` — never let Prisma alter this schema.
+// Regenerate models from the live DB with:  npm run db:pull  (prisma db pull)
+//
+// The models below are hand-written for the ASP.NET Identity + audit tables so
+// the app has typed access before introspection is run. `prisma db pull` will
+// re-introspect and may rename these to match table names exactly — reconcile
+// model names with the code once you run it (see docs/DB-MAPPING.md).
+//
+// NOTE: Phase-0 authentication does NOT depend on these Prisma models; it uses
+// node-mssql (src/server/repositories/user-repository.ts) so login works
+// regardless of introspection state.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model AspNetUsers {
+  id                   String    @id @map("Id") @db.NVarChar(450)
+  userName             String?   @map("UserName") @db.NVarChar(256)
+  normalizedUserName   String?   @map("NormalizedUserName") @db.NVarChar(256)
+  email                String?   @map("Email") @db.NVarChar(256)
+  normalizedEmail      String?   @map("NormalizedEmail") @db.NVarChar(256)
+  emailConfirmed       Boolean   @map("EmailConfirmed")
+  passwordHash         String?   @map("PasswordHash") @db.NVarChar(Max)
+  securityStamp        String?   @map("SecurityStamp") @db.NVarChar(Max)
+  concurrencyStamp     String?   @map("ConcurrencyStamp") @db.NVarChar(Max)
+  phoneNumber          String?   @map("PhoneNumber") @db.NVarChar(Max)
+  phoneNumberConfirmed Boolean   @map("PhoneNumberConfirmed")
+  twoFactorEnabled     Boolean   @map("TwoFactorEnabled")
+  lockoutEnd           DateTime? @map("LockoutEnd")
+  lockoutEnabled       Boolean   @map("LockoutEnabled")
+  accessFailedCount    Int       @map("AccessFailedCount")
+  // Custom columns added by ApplicationUser
+  name                 String?   @map("Name") @db.NVarChar(Max)
+  userKey              String?   @map("UserKey") @db.NVarChar(Max)
+
+  claims AspNetUserClaims[]
+  roles  AspNetUserRoles[]
+
+  @@map("AspNetUsers")
+}
+
+model AspNetRoles {
+  id               String  @id @map("Id") @db.NVarChar(450)
+  name             String? @map("Name") @db.NVarChar(256)
+  normalizedName   String? @map("NormalizedName") @db.NVarChar(256)
+  concurrencyStamp String? @map("ConcurrencyStamp") @db.NVarChar(Max)
+
+  users AspNetUserRoles[]
+
+  @@map("AspNetRoles")
+}
+
+model AspNetUserRoles {
+  userId String @map("UserId") @db.NVarChar(450)
+  roleId String @map("RoleId") @db.NVarChar(450)
+
+  user AspNetUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role AspNetRoles @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("AspNetUserRoles")
+}
+
+model AspNetUserClaims {
+  id         Int     @id @default(autoincrement()) @map("Id")
+  userId     String  @map("UserId") @db.NVarChar(450)
+  claimType  String? @map("ClaimType") @db.NVarChar(Max)
+  claimValue String? @map("ClaimValue") @db.NVarChar(Max)
+
+  user AspNetUsers @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("AspNetUserClaims")
+}
+
+model tblAuditTrail {
+  actionDate        DateTime @map("ActionDate")
+  actionBy          String   @map("ActionBy") @db.VarChar(50)
+  actionDescription String   @map("ActionDescription") @db.VarChar(100)
+  actionId          String?  @map("ActionID") @db.VarChar(50)
+
+  // Composite of all columns — the legacy table has no primary key.
+  @@id([actionDate, actionBy, actionDescription])
+  @@map("tblAuditTrail")
+}
+
+// ── Setups / master data (Phase 1) ───────────────────────────────────────────
+// Column names taken from the legacy SetupRepository / LocationRepository SQL.
+
+model tblGangs {
+  gangId   Int     @id @default(autoincrement()) @map("GangId")
+  gangName String  @map("GangName")
+  notes    String? @map("Notes")
+
+  @@map("tblGangs")
+}
+
+model tblVessel {
+  vesselId   Int    @id @default(autoincrement()) @map("VesselId")
+  vesselName String @map("VesselName")
+
+  @@map("tblVessel")
+}
+
+model tblCargo {
+  cargoId   Int    @id @default(autoincrement()) @map("CargoId")
+  cargoName String @map("CargoName")
+
+  @@map("tblCargo")
+}
+
+model tblNationality {
+  id          Int    @id @default(autoincrement()) @map("Id")
+  nationality String @map("Nationality")
+
+  @@map("tblNationality")
+}
+
+model tblLocation {
+  locationId Int    @id @default(autoincrement()) @map("LocationId")
+  location   String @map("Location")
+
+  @@map("tblLocation")
+}
+
+model tblReportingPoint {
+  reportingPointId Int    @id @default(autoincrement()) @map("ReportingPointId")
+  reportingPoint   String @map("ReportingPoint")
+
+  @@map("tblReportingPoint")
+}
+
+model tblBanks {
+  bankId   Int    @id @default(autoincrement()) @map("BankId")
+  bankName String @map("BankName")
+
+  @@map("tblBanks")
+}
+
+model tblBankBranches {
+  branchId    Int       @id @default(autoincrement()) @map("BranchId")
+  branchName  String    @map("BranchName")
+  bankId      Int       @map("BankId")
+  sortCode    String    @map("SortCode")
+  createdDate DateTime? @map("CreatedDate")
+
+  @@map("tblBankBranches")
+}
+
+model tblDLECompany {
+  dlecodeCompanyId   Int      @id @default(autoincrement()) @map("DlecodeCompanyId")
+  dlecodeCompanyName String   @map("DLEcodeCompanyName")
+  dleaddr            String?  @map("DLEaddr")
+  dletel             String?  @map("DLEtel")
+  email              String?  @map("Email")
+  fcontp             String?  @map("FContp")
+  ftel               String?  @map("Ftel")
+  femail             String?  @map("FEmail")
+  pattern            String?  @map("Pattern")
+  ocontp             String?  @map("OContp")
+  otel               String?  @map("Otel")
+  oemail             String?  @map("OEmail")
+  acontp             String?  @map("AContp")
+  atel               String?  @map("Atel")
+  aemail             String?  @map("AEmail")
+  sharePerc          Float?   @map("SharePerc")
+
+  @@map("tblDLECompany")
+}
+
+// ── Trade & payroll setup (Phase 2 — F3) ─────────────────────────────────────
+// Column names taken from sql/database-schema.sql (authoritative). ntext notes
+// map to @db.NText. Rate/payroll tables are effective-dated: a new row is added
+// via a stored procedure (which closes the prior row's EndDate); edits update in
+// place. See src/db/procedures.ts (spAddTradeGroupRate / spAddPayrollSetup).
+
+model tblTradeGroup {
+  tradegroupId   Int     @id @default(autoincrement()) @map("TradegroupID")
+  tradegroupName String? @map("TradegroupNAME") @db.VarChar(50)
+  dnotes         String? @map("DNOTES") @db.NText
+  gphaGroupId    String? @map("GPHA_GroupId") @db.VarChar(50)
+
+  @@map("tblTradeGroup")
+}
+
+model tblTradeType {
+  tradetypeId   Int     @id @default(autoincrement()) @map("TradetypeID")
+  tradetypeName String? @map("TradetypeNAME") @db.VarChar(50)
+  trnote        String? @map("TRNOTE") @db.NText
+  tradegroupId  Int?    @map("TradegroupID")
+  prefixname    String? @map("prefixname") @db.VarChar(5)
+  gphaJobId     String? @map("GPHA_JobId") @db.VarChar(50)
+
+  @@map("tblTradeType")
+}
+
+model tblTradeGroupRates {
+  id                Int       @id @default(autoincrement()) @map("Id")
+  tradegroupId      Int       @map("TradegroupID")
+  dbwage            Float?    @map("DBWage")
+  dbwageWkend       Float?    @map("DBWageWkend")
+  dbwageHday        Float?    @map("DBWageHday")
+  hourOtimeWkday    Float?    @map("HourOtimeWkday")
+  hourOtimeWkend    Float?    @map("HourOtimeWkend")
+  hourOtimeHday     Float?    @map("HourOtimeHday")
+  nawkday           Float?    @map("NAWkday")
+  nawkend           Float?    @map("NAWkend")
+  nahday            Float?    @map("NAHday")
+  shiftAllowance    Float?    @map("ShiftAllowance")
+  transport         Float?    @map("Transport")
+  subsidy           Float?    @map("Subsidy")
+  ppemedical        Float?    @map("PPEMedical")
+  bussing           Float?    @map("Bussing")
+  dbwageDle         Float?    @map("DBWageDLE")
+  dbwageWkendDle    Float?    @map("DBWageWkendDLE")
+  hourOtimeWkdayDle Float?    @map("HourOtimeWkdayDLE")
+  hourOtimeWkendDle Float?    @map("HourOtimeWkendDLE")
+  nawkdayDle        Float?    @map("NAWkdayDLE")
+  nawkendDle        Float?    @map("NAWkendDLE")
+  effectiveDate     DateTime? @map("EffectiveDate")
+  endDate           DateTime? @map("EndDate")
+  createdDate       DateTime? @map("CreatedDate")
+  createdBy         String?   @map("CreatedBy") @db.VarChar(50)
+  updateStatus      Boolean?  @map("UpdateStatus")
+  updatedBy         String?   @map("UpdatedBy") @db.VarChar(50)
+  updatedDate       DateTime? @map("UpdatedDate")
+
+  @@map("tblTradeGroupRates")
+}
+
+// ── Daily requisitions (Phase 3 — F4) ────────────────────────────────────────
+// Writes go through stored procedures (spAddDailyReq / spUpdateDailyReq /
+// spDeleteDailyReq / spAddSubStaffReq / spToogleWorkerTransport /
+// spUpdateDailyReqHours). These models are used for reads only.
+
+/** tblStaffReq — the daily requisition / cost-sheet header (read-only here). */
+model tblStaffReq {
+  autoNo           Int       @map("AutoNo")
+  reqNo            String    @id @map("ReqNo") @db.VarChar(10)
+  dlecodeCompanyId Int       @map("DLEcodeCompanyID")
+  vesselberthId    Int?      @map("VesselberthID")
+  locationId       Int?      @map("locationID")
+  reportpointId    Int?      @map("ReportpointID")
+  cargoId          Int?      @map("cargoID")
+  gangId           Int?      @map("gangID")
+  job              String?   @map("job") @db.VarChar(50)
+  date             DateTime  @map("date_")
+  normal           Float     @map("Normal")
+  overtime         Float     @map("Overtime")
+  weekends         Boolean   @map("Weekends")
+  night            Boolean   @map("Night")
+  shiftType        String?   @map("ShiftType") @db.VarChar(10)
+  approved         Boolean   @map("Approved")
+  adate            DateTime  @map("Adate")
+  onBoardAllowance Boolean?  @map("OnBoardAllowance")
+  processed        Boolean?  @map("Processed")
+  stored           Boolean?  @map("Stored")
+  gphaRequestId    String?   @map("GPHA_RequestID") @db.VarChar(50)
+
+  @@map("tblStaffReq")
+}
+
+/** tblSubStaffReq — worker allocation rows. Adds go through spAddSubStaffReq;
+    this model is used for the raw delete (RemoveSubStaffReq). */
+model tblSubStaffReq {
+  autoId       Int    @id @default(autoincrement()) @map("AutoId")
+  reqNo        String @map("ReqNo") @db.VarChar(10)
+  workerId     String @map("WorkerID") @db.VarChar(10)
+  tradegroupId Int?   @map("TradegroupID")
+  transport    String @map("transport") @db.Char(1)
+  normal       Float? @map("Normal")
+  overtime     Float? @map("Overtime")
+
+  @@map("tblSubStaffReq")
+}
+
+/** vwDailyReq — requisition list with joined company/vessel/reporting-point. */
+model VwDailyReq {
+  autoNo             Int       @map("AutoNo")
+  reqNo              String    @id @map("ReqNo") @db.VarChar(10)
+  date               DateTime  @map("date_")
+  approved           Boolean   @map("Approved")
+  dlecodeCompanyName String?   @map("DLEcodeCompanyName")
+  vesselName         String?   @map("VesselName")
+  reportingPoint     String?   @map("ReportingPoint")
+  submitted          Boolean?  @map("Submitted")
+  processed          Boolean?  @map("Processed")
+  hoursConfirmed     Boolean?  @map("HoursConfirmed")
+  gphaRequestId      String?   @map("GPHA_RequestID")
+
+  @@map("vwDailyReq")
+}
+
+/** vwSubStaffReq — workers allocated to a requisition (read-only). */
+model VwSubStaffReq {
+  autoId         Int     @id @map("AutoId")
+  reqNo          String  @map("ReqNo") @db.VarChar(10)
+  workerId       String  @map("WorkerID") @db.VarChar(10)
+  sname          String? @map("SName") @db.VarChar(30)
+  oname          String? @map("OName") @db.VarChar(50)
+  tradetypeName  String? @map("TradetypeNAME") @db.VarChar(50)
+  tradegroupName String? @map("TradegroupNAME") @db.VarChar(50)
+  ezwichid       String? @map("ezwichid") @db.VarChar(50)
+  transport      String? @map("transport") @db.Char(1)
+  tradetypeId    Int?    @map("TradetypeID")
+  normal         Float?  @map("Normal")
+  overtime       Float?  @map("Overtime")
+
+  @@map("vwSubStaffReq")
+}
+
+// ── Weekly & monthly requisitions (Phase 5 — F6) ─────────────────────────────
+// Writes go through stored procedures. These models are read-only; the header
+// tables are per-worker (WorkerID on the requisition itself).
+
+model tblStaffWReq {
+  autoNo           Int       @map("AutoNo")
+  reqNo            String    @id @map("ReqNo") @db.VarChar(10)
+  dlecodeCompanyId Int       @map("DLEcodeCompanyID")
+  workerId         String    @map("WorkerID") @db.VarChar(10)
+  tradegroupId     Int?      @map("TradegroupID")
+  tradetypeId      Int?      @map("TradetypeID")
+  reportpointId    Int?      @map("ReportpointID")
+  locationId       Int?      @map("LocationID")
+  job              String?   @map("job") @db.VarChar(50)
+  date             DateTime  @map("date_")
+  adate            DateTime  @map("Adate")
+  approved         Boolean?  @map("Approved")
+  processed        Boolean?  @map("Processed")
+  stored           Boolean?  @map("Stored")
+  confirmed        Boolean?  @map("Confirmed")
+  duplicateShift   Boolean?  @map("DuplicateShift")
+
+  @@map("tblStaffWReq")
+}
+
+model tblStaffMReq {
+  autoNo           Int       @map("AutoNo")
+  reqNo            String    @id @map("ReqNo") @db.VarChar(10)
+  dlecodeCompanyId Int       @map("DLEcodeCompanyID")
+  workerId         String    @map("WorkerID") @db.VarChar(10)
+  tradegroupId     Int?      @map("TradegroupID")
+  tradetypeId      Int?      @map("TradetypeID")
+  reportpointId    Int?      @map("ReportpointID")
+  locationId       Int?      @map("LocationID")
+  job              String?   @map("job") @db.VarChar(50)
+  date             DateTime  @map("date_")
+  adate            DateTime  @map("Adate")
+  approved         Boolean?  @map("Approved")
+  processed        Boolean?  @map("Processed")
+  stored           Boolean?  @map("Stored")
+  confirmed        Boolean?  @map("Confirmed")
+  dwkday           Int?      @map("DWkday")
+  dwkend           Int?      @map("DWkend")
+  dtotal           Int?      @map("DTotal")
+  hrwkday          Float?    @map("HRWkday")
+  hrwkend          Float?    @map("HRWkend")
+  nwkday           Int?      @map("NWkday")
+  nwkend           Int?      @map("NWkend")
+  yyyymm           String?   @map("Yyyymm") @db.VarChar(6)
+  periodStart      DateTime? @map("PeriodStart")
+  periodEnd        DateTime? @map("PeriodEnd")
+
+  @@map("tblStaffMReq")
+}
+
+/** tblSubStaffWReq — weekly work-day rows (used for the raw delete). */
+model tblSubStaffWReq {
+  autoId           Int      @id @default(autoincrement()) @map("AutoId")
+  reqNo            String   @map("ReqNo") @db.VarChar(10)
+  transDate        DateTime @map("TransDate")
+  normal           Float    @map("Normal")
+  overtime         Float    @map("Overtime")
+
+  @@map("tblSubStaffWReq")
+}
+
+/** vwWeeklyReq — weekly requisition list (joined company + worker name). */
+model VwWeeklyReq {
+  autoNo             Int      @map("AutoNo")
+  reqNo              String   @id @map("ReqNo") @db.VarChar(10)
+  date               DateTime @map("date_")
+  dlecodeCompanyName String?  @map("DLEcodeCompanyName")
+  workerName         String?  @map("WorkerName")
+  approved           Boolean? @map("Approved")
+  workerId           String   @map("WorkerID") @db.VarChar(10)
+  confirmed          Boolean? @map("Confirmed")
+  processed          Boolean? @map("Processed")
+
+  @@map("vwWeeklyReq")
+}
+
+/** vwMonthlyReq — monthly requisition list (joined company + worker name). */
+model VwMonthlyReq {
+  autoNo             Int      @map("AutoNo")
+  reqNo              String   @id @map("ReqNo") @db.VarChar(10)
+  date               DateTime @map("date_")
+  dlecodeCompanyName String?  @map("DLEcodeCompanyName")
+  workerId           String   @map("WorkerID") @db.VarChar(10)
+  workerName         String?  @map("WorkerName")
+  approved           Boolean? @map("Approved")
+  confirmed          Boolean? @map("Confirmed")
+  processed          Boolean? @map("Processed")
+
+  @@map("vwMonthlyReq")
+}
+
+/** vwSubStaffWReq — weekly work days (joined vessel name). */
+model VwSubStaffWreq {
+  autoId           Int      @id @map("AutoId")
+  reqNo            String   @map("ReqNo") @db.VarChar(10)
+  transDate        DateTime @map("TransDate")
+  normal           Float    @map("Normal")
+  overtime         Float    @map("Overtime")
+  night            String?  @map("Night") @db.VarChar(5)
+  weekends         String?  @map("Weekends") @db.VarChar(7)
+  holiday          String?  @map("Holiday") @db.VarChar(7)
+  remarks          String?  @map("Remarks") @db.VarChar(50)
+  vesselberthId    Int?     @map("VesselberthID")
+  vesselName       String?  @map("VesselName")
+  transport        String?  @map("Transport") @db.Char(1)
+  onBoardAllowance Boolean  @map("OnBoardAllowance")
+
+  @@map("vwSubStaffWReq")
+}
+
+// ── Workers (Phase 2 — F2) ───────────────────────────────────────────────────
+// Read-only views (introspected as models per ADR-002). Writes go through the
+// stored procedures spAddWorker / spUpdateWorker / spSetWorkerStatus /
+// spUpdateWorkerTrade (see src/db/procedures.ts). The binary Pics column is
+// intentionally omitted (unused by the legacy form; image type).
+
+/** vwWorkers — flat worker list with joined lookup names + status label. */
+model VwWorker {
+  workerId       String    @id @map("WorkerID") @db.VarChar(10)
+  workerType     String    @map("WorkerType") @db.Char(1)
+  sname          String?   @map("SName") @db.VarChar(30)
+  oname          String?   @map("OName") @db.VarChar(50)
+  dateBirth      DateTime? @map("Date_Birth")
+  ssfno          String?   @map("SSFNo") @db.VarChar(30)
+  nhis           String?   @map("NHIS") @db.VarChar(30)
+  nat            String?   @map("NAT") @db.VarChar(30)
+  gangName       String?   @map("GangName")
+  tradegroupId   Int?      @map("TradegroupID")
+  tradegroupName String?   @map("TradegroupNAME") @db.VarChar(50)
+  tradetypeId    Int?      @map("TradetypeID")
+  tradetypeName  String?   @map("TradetypeNAME") @db.VarChar(50)
+  flags          String?   @map("flags") @db.VarChar(3)
+  ezwichid       String?   @map("ezwichid") @db.VarChar(50)
+  departmentId   Int?      @map("DepartmentId")
+  bankNumber     String?   @map("BankNumber") @db.VarChar(30)
+  sortCode       String?   @map("SortCode")
+  regDate        DateTime? @map("RegDate")
+  phoneNo        String?   @map("PhoneNo") @db.VarChar(20)
+  kin            String?   @map("Kin") @db.VarChar(30)
+  workerStatus   String?   @map("WorkerStatus")
+  bankName       String?   @map("BankName")
+  branchName     String?   @map("BranchName")
+  nationalId     String?   @map("NationalID") @db.VarChar(50)
+
+  @@map("vwWorkers")
+}
+
+/** vwTblWorkers — full worker record for the registration/edit form. */
+model VwTblWorker {
+  autoId        Int       @map("AutoID")
+  workerId      String    @id @map("WorkerID") @db.VarChar(10)
+  workerType    String    @map("WorkerType") @db.Char(1)
+  sname         String?   @map("SName") @db.VarChar(30)
+  oname         String?   @map("OName") @db.VarChar(50)
+  pname         String?   @map("Pname") @db.VarChar(50)
+  addr1         String?   @map("Addr1") @db.VarChar(30)
+  addr2         String?   @map("Addr2") @db.VarChar(30)
+  phoneNo       String?   @map("PhoneNo") @db.VarChar(20)
+  dateBirth     DateTime? @map("Date_Birth")
+  nationalityId Int?      @map("nationalityID")
+  education     String?   @map("Education") @db.VarChar(50)
+  kin           String?   @map("Kin") @db.VarChar(30)
+  relation      String?   @map("Relation") @db.VarChar(30)
+  kinAddr       String?   @map("KinAddr") @db.VarChar(30)
+  kinAddrPhone  String?   @map("KinAddrPhone") @db.VarChar(20)
+  regDate       DateTime? @map("RegDate")
+  contPer       String?   @map("ContPer") @db.VarChar(30)
+  contaddr      String?   @map("Contaddr") @db.VarChar(30)
+  contPhone     String?   @map("ContPhone") @db.VarChar(20)
+  ssfno         String?   @map("SSFNo") @db.VarChar(30)
+  nhis          String?   @map("NHIS") @db.VarChar(30)
+  nat           String?   @map("NAT") @db.VarChar(30)
+  shoeSize      String?   @map("ShoeSize") @db.NVarChar(10)
+  height        String?   @map("Height") @db.NVarChar(10)
+  tradegroupId  Int?      @map("TradegroupID")
+  tradetypeId   Int?      @map("TradetypeID")
+  gangId        Int?      @map("GangID")
+  bankId        Int?      @map("BankID")
+  bankBranchId  Int?      @map("BankBranchId")
+  bankBranch    String?   @map("BankBranch") @db.VarChar(50)
+  bankNumber    String?   @map("BankNumber") @db.VarChar(30)
+  officialComm  String?   @map("OfficialComm") @db.VarChar(100)
+  flags         String?   @map("flags") @db.VarChar(3)
+  sex           String?   @map("Sex") @db.VarChar(1)
+  tax           Boolean   @map("Tax")
+  chargePremium Boolean   @map("ChargePremium")
+  subheader     String?   @map("subheader") @db.VarChar(50)
+  who           String?   @map("WHO") @db.VarChar(50)
+  whotime       DateTime? @map("WHOtime")
+  ezwichid      String?   @map("ezwichid") @db.VarChar(50)
+  nationalId    String?   @map("NationalID") @db.VarChar(50)
+  age           Int?      @map("Age")
+  tin           String?   @map("TIN") @db.VarChar(20)
+  departmentId  Int?      @map("DepartmentId")
+  paymentOption String?   @map("PaymentOption") @db.VarChar(10)
+  gphaGroupId   String?   @map("GPHA_GroupId") @db.VarChar(50)
+  gphaJobId     String?   @map("GPHA_JobId") @db.VarChar(50)
+  medicalIdNo   String?   @map("MedicalIDNo") @db.VarChar(30)
+
+  @@map("vwTblWorkers")
+}
+
+model tblPayrollSetup {
+  id                    Int       @id @default(autoincrement()) @map("Id")
+  unionDues             Float?    @map("UnionDues")
+  welfare               Float?    @map("Welfare")
+  medicals              Float?    @map("Medicals")
+  ssfemployee           Float?    @map("SSFemployee")
+  ssfemployer           Float?    @map("SSFemployer")
+  providentFundEmployee Float?    @map("ProvidentFundEmployee")
+  providentFundEmployer Float?    @map("ProvidentFundEmployer")
+  annualBonus           Float?    @map("AnnualBonus")
+  annualLeave           Float?    @map("AnnualLeave")
+  premiumShareHolder    Float?    @map("PremiumShareHolder")
+  premiumNonShareHolder Float?    @map("PremiumNonShareHolder")
+  premiumWithoutTt      Float?    @map("PremiumWithoutTT")
+  taxOnBonus            Float?    @map("TaxOnBonus")
+  taxOnBasic            Float?    @map("TaxOnBasic")
+  taxOnOvertime         Float?    @map("TaxOnOvertime")
+  taxOnProvidentFund    Float?    @map("TaxOnProvidentFund")
+  taxOnTransport        Float?    @map("TaxOnTransport")
+  onBoardAllowance      Float?    @map("OnBoardAllowance")
+  vat                   Float?    @map("Vat")
+  getFund               Float?    @map("GetFund")
+  nhil                  Float?    @map("NHIL")
+  taxOnNight            Float?    @map("TaxOnNight")
+  effectiveDate         DateTime? @map("EffectiveDate")
+  endDate               DateTime? @map("EndDate")
+  createdDate           DateTime? @map("CreatedDate")
+  createdBy             String?   @map("CreatedBy") @db.VarChar(50)
+  updateStatus          Boolean?  @map("UpdateStatus")
+  updatedBy             String?   @map("UpdatedBy") @db.VarChar(50)
+  updatedDate           DateTime? @map("UpdatedDate")
+
+  @@map("tblPayrollSetup")
+}
+
+// ── GPHA CLMS integration (Phase 4 — F5) ──────────────────────────────────────
+// These tables are the inbound landing zone for the external GPHA CLMS feed and
+// the reconciliation source. Columns mapped from sql/database-schema.sql.
+// NOTE: inserting into GPHALabourRequests fires trg_Insert_GPHALabourRequests,
+// which copies the row into tblGPHA_LabourRequests (the table the UI reads).
+
+/** GPHALabourRequests — raw inbound labour-request landing table (idempotent on Id). */
+model GPHALabourRequests {
+  id              String   @id @map("Id") @db.UniqueIdentifier
+  requestDate     DateTime @map("RequestDate")
+  labourRequestId String?  @map("LabourRequestId") @db.NVarChar(255)
+  unitDescription String?  @map("UnitDescription") @db.NVarChar(500)
+  jobDescription  String?  @map("JobDescription") @db.NVarChar(Max)
+  numberRequested Int      @map("NumberRequested")
+  neededOn        DateTime @map("NeededOn")
+  requestId       String?  @map("RequestId") @db.NVarChar(255)
+  companySecret   String?  @map("CompanySecret") @db.VarChar(100)
+  companyKey      String?  @map("CompanyKey") @db.VarChar(100)
+  geoLocation     String?  @map("GeoLocation") @db.NVarChar(100)
+  weekType        String?  @map("WeekType") @db.VarChar(50)
+  shift           String?  @map("Shift") @db.VarChar(50)
+
+  @@map("GPHALabourRequests")
+}
+
+/** GPHAJobAssignments — cost-sheet job assignment; Processed=0 rows drive reconcile. */
+model GPHAJobAssignments {
+  id               String   @id @map("Id") @db.UniqueIdentifier
+  numberToSupply   Int      @map("NumberToSupply")
+  job              String   @map("Job") @db.NVarChar(200)
+  costSheetId      String?  @map("CostSheetId") @db.UniqueIdentifier
+  neededOn         DateTime @map("NeededOn")
+  shift            Boolean  @map("Shift")
+  dayType          String   @map("DayType") @db.NVarChar(50)
+  geoLocation      String   @map("GeoLocation") @db.NVarChar(200)
+  unit             String   @map("Unit") @db.NVarChar(200)
+  requestNumber    String   @map("RequestNumber") @db.NVarChar(50)
+  dateAdded        DateTime @map("DateAdded")
+  numberToSupplied Int      @map("NumberToSupplied")
+  processed        Boolean? @map("Processed")
+
+  @@map("GPHAJobAssignments")
+}
+
+/** GPHACostSheets — cost-sheet header (one per job assignment). */
+model GPHACostSheets {
+  id               String    @id @map("Id") @db.UniqueIdentifier
+  jobAssignmentId  String    @map("JobAssignmentId") @db.UniqueIdentifier
+  labourCompany    String    @map("LabourCompany") @db.NVarChar(200)
+  companyId        String    @map("CompanyId") @db.UniqueIdentifier
+  totalAmount      Decimal   @map("TotalAmount") @db.Decimal(18, 2)
+  generatedDate    DateTime  @map("GeneratedDate")
+  status           String    @map("Status") @db.NVarChar(50)
+  shift            String    @map("Shift") @db.NVarChar(50)
+  costSheetNumber  String    @map("CostSheetNumber") @db.NVarChar(50)
+  dateAdded        DateTime  @map("DateAdded")
+  paymentReference String?   @map("PaymentReference") @db.NVarChar(100)
+  paymentStatus    Boolean   @map("PaymentStatus")
+  processed        Boolean?  @map("Processed")
+  processedDate    DateTime? @map("ProcessedDate")
+
+  @@map("GPHACostSheets")
+}
+
+/** GPHACostSheetDetails — per-worker cost-sheet lines (hours, rate type, level). */
+model GPHACostSheetDetails {
+  id                  String    @id @map("Id") @db.UniqueIdentifier
+  costSheetId         String    @map("CostSheetId") @db.UniqueIdentifier
+  dateAdded           DateTime  @map("DateAdded")
+  audited             Boolean   @map("Audited")
+  auditedDate         DateTime? @map("AuditedDate")
+  rateType            String    @map("RateType") @db.NVarChar(50)
+  hoursWorked         Decimal   @map("HoursWorked") @db.Decimal(10, 2)
+  baseRate            Decimal   @map("BaseRate") @db.Decimal(18, 2)
+  premiumTotal        Decimal   @map("PremiumTotal") @db.Decimal(18, 2)
+  nhilGflTotal        Decimal   @map("NHilGflTotal") @db.Decimal(18, 2)
+  vatTotal            Decimal   @map("VatTotal") @db.Decimal(18, 2)
+  transportationTotal Decimal   @map("TransportationTotal") @db.Decimal(18, 2)
+  incentiveTotal      Decimal   @map("IncentiveTotal") @db.Decimal(18, 2)
+  level               String    @map("Level") @db.NVarChar(50)
+  jobDescription      String    @map("JobDescription") @db.NVarChar(200)
+  worker              String    @map("Worker") @db.NVarChar(200)
+  workerId            String    @map("WorkerId") @db.NVarChar(100)
+  company             String    @map("Company") @db.NVarChar(200)
+  shiftAllowance      Decimal   @map("ShiftAllowance") @db.Decimal(18, 2)
+  nightAllowance      Decimal   @map("NightAllowance") @db.Decimal(18, 2)
+  total               Decimal   @map("Total") @db.Decimal(18, 2)
+  unit                String    @map("Unit") @db.NVarChar(200)
+  auditedBy           String?   @map("AuditedBy") @db.NVarChar(100)
+  overTimeHours       Decimal   @map("OverTimeHours") @db.Decimal(10, 2)
+  overTimeRate        Decimal   @map("OverTimeRate") @db.Decimal(18, 2)
+  groupIncentive      Decimal   @map("GroupIncentive") @db.Decimal(18, 2)
+
+  @@map("GPHACostSheetDetails")
+}
+
+/** tblGPHA_LabourRequests — synced request list (pending/all/approved UI + reconcile). */
+model TblGphaLabourRequest {
+  id               Int       @id @default(autoincrement()) @map("Id")
+  requestDate      DateTime? @map("RequestDate")
+  labourRequestId  String    @map("LabourRequestID") @db.VarChar(50)
+  unitDescription  String?   @map("UnitDescription") @db.VarChar(200)
+  jobRequested     String?   @map("JobRequested") @db.VarChar(50)
+  numberRequested  String?   @map("NumberRequested") @db.VarChar(50)
+  neededOn         String?   @map("NeededOn") @db.VarChar(50)
+  rNeededOn        DateTime? @map("rNeededOn")
+  rDay             String?   @map("rDay") @db.VarChar(10)
+  rShift           String?   @map("rShift") @db.VarChar(10)
+  createdDate      DateTime? @map("CreatedDate")
+  hasCostSheet     Boolean?  @map("hasCostSheet")
+  costSheetNo      String?   @map("CostSheetNo") @db.VarChar(50)
+  gphaApproved     Boolean?  @map("GPHA_Approved")
+  gphaApprovedDate DateTime? @map("GPHA_ApprovedDate")
+  syncDate         DateTime? @map("SyncDate")
+  gdlcApproved     Boolean?  @map("GDLC_Approved")
+  gdlcApprovedDate DateTime? @map("GDLC_ApprovedDate")
+
+  @@map("tblGPHA_LabourRequests")
+}
+
+// ── Loans (Phase 7 — F9) ──────────────────────────────────────────────────────
+
+/** tblLoanSchemes — loan scheme master (plain CRUD via Prisma). */
+model tblLoanScheme {
+  id          Int       @id @default(autoincrement()) @map("Id")
+  loanScheme  String?   @map("LoanScheme") @db.VarChar(100)
+  accountNo   String?   @map("AccountNo") @db.VarChar(30)
+  createdDate DateTime? @map("CreatedDate")
+
+  @@map("tblLoanSchemes")
+}
+
+/** tblLoans — loan header. Add/update/approve go through SPs; this model is used
+    for the edit-form read and the raw delete. PK is LoanNo. LoanBalance is a
+    computed column (LoanAmount − RepaidAmount) — read-only, never written. */
+model tblLoan {
+  autoId       Int       @map("AutoId")
+  loanNo       String    @id @map("LoanNo") @db.VarChar(20)
+  workerId     String?   @map("WorkerId") @db.VarChar(10)
+  loanSchemeId Int       @map("LoanSchemeId")
+  loanDate     DateTime  @map("LoanDate")
+  loanAmount   Float?    @map("LoanAmount")
+  repayAmount  Float?    @map("RepayAmount")
+  monthlyLimit Float?    @map("MonthlyLimit")
+  repaidAmount Float?    @map("RepaidAmount")
+  loanBalance  Float?    @map("LoanBalance")
+  repaid       Boolean?  @map("Repaid")
+  autoDeduct   Boolean?  @map("AutoDeduct")
+  approved     Boolean?  @map("Approved")
+  approvedDate DateTime? @map("ApprovedDate")
+  approvedBy   String?   @map("ApprovedBy") @db.VarChar(50)
+  createdDate  DateTime? @map("CreatedDate")
+  createdBy    String?   @map("CreatedBy") @db.VarChar(50)
+  updatedDate  DateTime? @map("UpdatedDate")
+  updatedBy    String?   @map("UpdatedBy") @db.VarChar(50)
+
+  @@map("tblLoans")
+}
+
+/** tblLoanRepayments — repayment rows (list read + delete via SP). */
+model tblLoanRepayment {
+  autoId          Int       @id @default(autoincrement()) @map("AutoId")
+  loanNo          String    @map("LoanNo") @db.VarChar(20)
+  workerId        String    @map("WorkerId") @db.VarChar(10)
+  repayDate       DateTime? @map("RepayDate")
+  repayAmount     Float?    @map("RepayAmount")
+  reqNo           String?   @map("ReqNo") @db.VarChar(20)
+  approved        Boolean?  @map("Approved")
+  approvedDate    DateTime? @map("ApprovedDate")
+  approvedBy      String?   @map("ApprovedBy") @db.VarChar(50)
+  createdDate     DateTime? @map("CreatedDate")
+  createdBy       String?   @map("CreatedBy") @db.VarChar(50)
+  manualReceiptNo String?   @map("ManualReceiptNo") @db.VarChar(50)
+
+  @@map("tblLoanRepayments")
+}
+
+/** vwLoans — loan list with joined worker name + scheme + account (read-only). */
+model VwLoan {
+  autoId       Int       @map("AutoId")
+  loanNo       String    @id @map("LoanNo") @db.VarChar(20)
+  workerId     String?   @map("WorkerId") @db.VarChar(10)
+  workerName   String?   @map("WorkerName")
+  loanSchemeId Int       @map("LoanSchemeId")
+  loanScheme   String?   @map("LoanScheme") @db.VarChar(100)
+  loanDate     DateTime  @map("LoanDate")
+  loanAmount   Float?    @map("LoanAmount")
+  repayAmount  Float?    @map("RepayAmount")
+  monthlyLimit Float?    @map("MonthlyLimit")
+  repaidAmount Float?    @map("RepaidAmount")
+  loanBalance  Float?    @map("LoanBalance")
+  repaid       Boolean?  @map("Repaid")
+  autoDeduct   Boolean?  @map("AutoDeduct")
+  createdDate  DateTime? @map("CreatedDate")
+  accountNo    String?   @map("AccountNo") @db.VarChar(30)
+  approved     Boolean?  @map("Approved")
+
+  @@map("vwLoans")
+}

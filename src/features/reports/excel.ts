@@ -3,7 +3,7 @@ import "server-only";
 import ExcelJS from "exceljs";
 
 import type { ReportDef, ReportRow } from "./types";
-import { excelValue, sumTotals } from "./format";
+import { excelValue, sumTotals, cellValue } from "./format";
 
 interface WorkbookMeta {
   company: string;
@@ -75,7 +75,7 @@ export async function buildWorkbook(
     const excelRow = ws.getRow(r);
     cols.forEach((c, i) => {
       const cell = excelRow.getCell(i + 1);
-      cell.value = excelValue(row[c.key], c.format);
+      cell.value = excelValue(cellValue(c, row), c.format);
       cell.alignment = { horizontal: c.align ?? (c.total ? "right" : "left") };
     });
     r++;

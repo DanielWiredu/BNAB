@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { ReportDef, ReportRow } from "./types";
-import { formatValue, sumTotals } from "./format";
+import { formatValue, sumTotals, cellValue } from "./format";
 
 function esc(s: string): string {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -17,7 +17,7 @@ export function buildCsv(report: ReportDef, rows: ReportRow[]): string {
   lines.push(cols.map((c) => esc(c.label)).join(","));
 
   const rowLine = (row: ReportRow) =>
-    cols.map((c) => esc(formatValue(row[c.key], c.format))).join(",");
+    cols.map((c) => esc(formatValue(cellValue(c, row), c.format))).join(",");
 
   const totalLine = (label: string, totals: Record<string, number>) =>
     cols

@@ -1,6 +1,6 @@
 import type { ReportColumn, ReportDef, ReportRow } from "./types";
 import { REPORT_HEADER } from "./types";
-import { formatValue, sumTotals } from "./format";
+import { formatValue, sumTotals, cellValue } from "./format";
 
 function cellClass(col: ReportColumn): string {
   if (col.align === "right" || col.total) return "report-num";
@@ -39,7 +39,7 @@ function DataRow({ columns, row }: { columns: ReportColumn[]; row: ReportRow }) 
     <tr>
       {columns.map((c) => (
         <td key={c.key} className={cellClass(c)}>
-          {formatValue(row[c.key], c.format)}
+          {formatValue(cellValue(c, row), c.format)}
         </td>
       ))}
     </tr>

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { Permissions as P } from "@/server/auth/permissions";
-import type { ReportColumn, ReportDef, ReportGroup } from "./types";
+import type { ReportColumn, ReportDef, ReportGroup, ReportRow } from "./types";
 import { catalogByKey } from "./catalog";
 import {
   dateRangeView,
@@ -41,9 +41,28 @@ const date = (key: string, label: string): ReportColumn => c(key, label, { forma
 const yesno = (key: string, label: string): ReportColumn =>
   c(key, label, { format: "yesno", align: "center" });
 
+/** Legacy reports print one "Name" column = Surname + Other Names. */
+const nameValue = (r: ReportRow) => `${r["SName"] ?? ""} ${r["OName"] ?? ""}`.trim();
+const nameCol = (label = "Name", width = 28): ReportColumn =>
+  c("Name", label, { value: nameValue, width });
+
+/** Read a numeric field from a row (0 when null/blank). */
+const rn = (r: ReportRow, key: string): number => {
+  const v = Number(r[key]);
+  return Number.isFinite(v) ? v : 0;
+};
+/** A computed money column (summed into subtotals/grand total by default). */
+const calc = (
+  key: string,
+  label: string,
+  fn: (r: ReportRow) => number,
+  total = true,
+): ReportColumn => c(key, label, { format: "money", align: "right", total, value: fn });
+
 const DLE_GROUP: ReportGroup = { key: "DLEcodeCompanyName", label: "Company" };
 const BANK_GROUP: ReportGroup = { key: "BankName", label: "Bank" };
 const TRADE_GROUP: ReportGroup = { key: "TradegroupNAME", label: "Trade Group" };
+const REQ_GROUP: ReportGroup = { key: "ReqNo", label: "Requisition" };
 
 const DATE_RANGE_FALLBACK = [
   { name: "st", kind: "date-start", label: "Start Date" },
@@ -57,7 +76,7 @@ function def(
   family: ReportDef["family"],
   columns: ReportColumn[],
   query: ReportDef["query"],
-  opts: { group?: ReportGroup } = {},
+  opts: { group?: ReportGroup; layout?: ReportDef["layout"] } = {},
 ): ReportDef {
   const cat = catalogByKey(key);
   return {
@@ -68,6 +87,7 @@ function def(
     params: cat?.params ?? DATE_RANGE_FALLBACK,
     columns,
     group: opts.group,
+    layout: opts.layout,
     query,
   };
 }
@@ -78,83 +98,101 @@ const DAILY: ReportDef[] = [
     "daily-active-workers",
     "Daily Active Worker List",
     "daily",
+    // Legacy ACTIVE WORKER LIST: flat list ordered by WorkerID (no grouping),
+    // columns WorkerID · Name · Group · Category · Phone · Date · DOB · Reg · NHIS.
     [
-      c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("PhoneNo", "Phone"), c("TradetypeNAME", "Trade Type"), date("RegDate", "Reg Date"),
-      c("SSFNo", "SSF No"), c("NHIS", "NHIS"), c("ReqNo", "Req No"), date("date_", "Date"),
+      c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }), c("TradetypeNAME", "Category", { width: 22 }),
+      c("PhoneNo", "Phone", { width: 16 }), date("date_", "Date"),
+      date("Date_Birth", "Date of Birth"), date("RegDate", "Reg Date"), c("NHIS", "NHIS", { width: 16 }),
     ],
-    dateRangeView("vwDailyActiveWorkers", "date_", "TradegroupNAME, SName"),
-    { group: TRADE_GROUP },
+    dateRangeView("vwDailyActiveWorkers", "date_", "WorkerID"),
+    {},
   ),
   def(
     "daily-active-workers-ssf",
     "Daily Active Worker List - SSF",
     "daily",
+    // Legacy SSF variant: keyed on SSF No, with a period days-worked count.
     [
-      c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("SSFNo", "SSF No"), c("NHIS", "NHIS"), c("ReqNo", "Req No"), date("date_", "Date"),
+      c("SSFNo", "SSF No", { width: 22 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }), c("TradetypeNAME", "Category", { width: 20 }),
+      c("PhoneNo", "Phone", { width: 14 }), date("Date_Birth", "Date of Birth"),
+      int("DaysWorked", "Days Worked"), c("NHIS", "NHIS", { width: 16 }),
     ],
-    dateRangeView("vwDailyActiveWorkers", "date_", "TradegroupNAME, SName"),
-    { group: TRADE_GROUP },
+    dateRangeView("vwDailyActiveWorkers", "date_", "SSFNo"),
+    {},
   ),
   def(
     "daily-active-vessel",
     "Daily Active Vessel List",
     "daily",
-    [c("VesselName", "Vessel", { width: 40 }), date("date_", "Date")],
+    // Legacy ACTIVE VESSELS LIST: flat list of vessels + active date.
+    [c("VesselName", "Vessel", { width: 44 }), date("date_", "Date")],
     dateRangeView("vwDailyActiveVessel", "date_", "VesselName, date_"),
-    { group: { key: "VesselName", label: "Vessel" } },
+    {},
   ),
   def(
     "daily-cost-sheet",
     "Daily Cost Sheet",
     "daily",
+    // Columns drive the Excel/CSV export; the on-screen/print layout is the
+    // per-requisition STAFF REQUISITION COST SHEET form (see layout below).
     [
-      c("ReqNo", "Req No"), date("date_", "Date"), c("VesselName", "Vessel"), c("Location", "Location"),
-      c("GangName", "Gang"), c("CargoName", "Cargo"), c("WorkerID", "Worker ID"), c("SName", "Surname"),
-      c("OName", "Other Names"), c("TradegroupNAME", "Trade Group"), yesno("Night", "Night"),
-      yesno("Weekends", "Weekend"), yesno("OnBoardAllowance", "On-Board"), yesno("Approved", "Approved"),
-      c("Preparedby", "Prepared By"),
+      c("ReqNo", "Req No"), date("date_", "Date"), c("DLEcodeCompanyName", "DLE Company"),
+      c("VesselName", "Vessel"), c("Location", "Location"), c("CargoName", "Cargo"),
+      c("TradetypeNAME", "Trade Type"), c("WorkerID", "Worker ID"), c("SName", "Surname"),
+      c("OName", "Other Names"), c("TradegroupNAME", "Group"), c("Ezwich", "Ezwich"),
+      yesno("Night", "Night"), yesno("Weekends", "Weekend"), c("Preparedby", "Prepared By"),
     ],
     dateRangeView("vwDailyCostSheet", "date_", "DLEcodeCompanyName, ReqNo"),
-    { group: DLE_GROUP },
+    { layout: "requisition-cost-sheet" },
   ),
   def(
     "daily-approved-cost-sheet",
     "Daily Approved Cost Sheet",
     "daily",
+    // Legacy APPROVED COST SHEET is a per-requisition pay form; matched here as
+    // a per-requisition group with subtotals + grand total. (The full wide pay
+    // grid — Incentive/Shift/Gross/Welfare/Union Dues/Medicals/Net — needs DB
+    // column confirmation before adding; only verified columns are shown.)
     [
-      c("ReqNo", "Req No"), date("date_", "Date"), c("WorkerID", "Worker ID"), c("SName", "Surname"),
-      c("OName", "Other Names"), c("TradegroupNAME", "Trade Group"), num("Normal", "Normal", true),
+      date("date_", "Date"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }), num("Normal", "Normal", true),
       num("Overtime", "Overtime", true), c("Night", "Night"), c("Weekends", "Weekend"),
-      money("BasicRate", "Basic Rate"), money("TransportAmount", "Transport", true),
-      money("NetTotal", "Net Total", true), c("Approvedby", "Approved By"),
+      money("BasicRate", "Basic", true), money("TransportAmount", "Transport", true),
+      money("NetTotal", "Net", true), c("Approvedby", "Approved By", { width: 18 }),
     ],
-    dateRangeViewByWorkerType("vwDailyApprovedCostSheet", "Adate", "WorkerType", "DLEcodeCompanyName, ReqNo"),
-    { group: DLE_GROUP },
+    dateRangeViewByWorkerType("vwDailyApprovedCostSheet", "Adate", "WorkerType", "ReqNo, SName"),
+    { group: REQ_GROUP },
   ),
   def(
     "daily-processed",
     "Daily Processed",
     "daily",
+    // Legacy PROCESS SHEET: per-requisition; matched as a per-requisition group.
     [
-      c("ReqNo", "Req No"), date("date_", "Date"), c("WorkerID", "Worker ID"), c("SName", "Surname"),
-      c("OName", "Other Names"), c("TradegroupNAME", "Trade Group"), num("Normal", "Normal", true),
+      date("date_", "Date"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }), num("Normal", "Normal", true),
       num("Overtime", "Overtime", true), c("Night", "Night"), c("Weekends", "Weekend"),
-      money("BasicRate", "Basic Rate"), money("BasicRateDLE", "DLE Rate"), money("TransportAmount", "Transport", true),
+      money("BasicRate", "Basic", true), money("BasicRateDLE", "DLE Rate"),
+      money("TransportAmount", "Transport", true),
     ],
-    dateRangeView("vwDailyProcessed", "Adate", "DLEcodeCompanyName, ReqNo"),
-    { group: DLE_GROUP },
+    dateRangeView("vwDailyProcessed", "Adate", "ReqNo, SName"),
+    { group: REQ_GROUP },
   ),
   def(
     "daily-invoice",
     "Daily Invoice",
     "daily",
+    // Legacy CUSTOMER INVOICE: per-company, with Gross/Premium/GetFund+NHIL+
+    // Covid/Vat/Net (unverified pay columns deferred). Grouped by company.
     [
-      c("ReqNo", "Req No"), date("date_", "Date"), c("WorkerID", "Worker ID"), c("SName", "Surname"),
-      c("TradegroupNAME", "Trade Group"), num("Normal", "Normal", true), num("Overtime", "Overtime", true),
-      money("BasicRateDLE", "DLE Rate", true), money("Vat", "VAT", true), money("GetFund", "GetFund"),
-      money("NHIL", "NHIL"), money("TransportAmount", "Transport"),
+      c("ReqNo", "Req No"), date("date_", "Date"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }), num("Normal", "Normal", true),
+      num("Overtime", "Overtime", true), money("BasicRateDLE", "DLE Rate", true),
+      money("Vat", "VAT", true), money("GetFund", "GetFund", true), money("NHIL", "NHIL", true),
+      money("TransportAmount", "Transport", true),
     ],
     dateRangeView("vwDailyInvoice", "Adate", "DLEcodeCompanyName, ReqNo"),
     { group: DLE_GROUP },
@@ -163,25 +201,29 @@ const DAILY: ReportDef[] = [
     "daily-payroll",
     "Daily Payroll",
     "daily",
+    // Legacy PAYROLL DETAILS: flat "All Workers" list ordered by name, grand
+    // total. (Incentive/Shift/Gross/Welfare/Union Dues/Medicals/Net columns
+    // need DB confirmation; verified pay columns shown.)
     [
-      c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("TradegroupNAME", "Trade Group"), num("Normal", "Normal", true), num("Overtime", "Overtime", true),
-      money("BasicRate", "Basic Rate"), money("SSFemployee", "SSF (Emp)", true),
-      money("ProvidentFundEmployee", "PF (Emp)", true), money("TaxOnBasic", "Tax", true),
-      money("TransportAmount", "Transport", true), c("BankNumber", "Bank Acct"), c("SSFNo", "SSF No"),
+      c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      num("Normal", "Normal", true), num("Overtime", "Overtime", true),
+      money("BasicRate", "Basic", true), money("TransportAmount", "Transport", true),
+      money("SSFemployee", "SSF (Emp)", true), money("ProvidentFundEmployee", "PF (Emp)", true),
+      money("TaxOnBasic", "Tax on Basic", true), c("ezwichid", "Ezwich", { width: 16 }),
+      c("BankNumber", "Account No", { width: 16 }),
     ],
-    dateRangeViewByWorkerType("vwDailyPayroll", "Adate", "WorkerType", "DLEcodeCompanyName, SName"),
-    { group: DLE_GROUP },
+    dateRangeViewByWorkerType("vwDailyPayroll", "Adate", "WorkerType", "SName"),
+    {},
   ),
   def(
     "daily-payroll-individual",
     "Daily Payroll - Individual",
     "daily",
     [
-      c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"), date("Adate", "Date"),
-      num("Normal", "Normal", true), num("Overtime", "Overtime", true), money("BasicRate", "Basic Rate"),
-      money("SSFemployee", "SSF (Emp)", true), money("ProvidentFundEmployee", "PF (Emp)", true),
-      money("TaxOnBasic", "Tax", true), money("TransportAmount", "Transport", true),
+      c("ReqNo", "Req No"), date("Adate", "Date"), c("DLEcodeCompanyName", "DLE Company", { width: 16 }),
+      num("Normal", "Normal", true), num("Overtime", "Overtime", true), money("BasicRate", "Basic", true),
+      money("TransportAmount", "Transport", true), money("SSFemployee", "SSF (Emp)", true),
+      money("ProvidentFundEmployee", "PF (Emp)", true), money("TaxOnBasic", "Tax on Basic", true),
     ],
     dateRangeViewByWorkerField("vwDailyPayroll", "Adate", "Adate"),
     {},
@@ -190,24 +232,29 @@ const DAILY: ReportDef[] = [
     "daily-report-listing",
     "Daily Report Listing",
     "daily",
+    // Legacy REPORT LISTING: grouped by company, subtotal per company + grand total.
     [
-      c("ReqNo", "Req No"), c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("TradegroupNAME", "Trade Group"), num("Normal", "Normal", true), num("Overtime", "Overtime", true),
-      money("BasicRate", "Basic Rate"), money("SSFemployee", "SSF (Emp)", true),
-      money("ProvidentFundEmployee", "PF (Emp)", true), money("TaxOnBasic", "Tax", true),
-      money("TransportAmount", "Transport", true),
+      c("ReqNo", "Req No"), date("Adate", "Date"), c("GangName", "Gang", { width: 16 }),
+      c("WorkerID", "Worker ID", { width: 12 }), nameCol("Name", 24), num("Normal", "Normal", true),
+      num("Overtime", "Overtime", true), money("BasicRate", "Basic", true),
+      money("TransportAmount", "Transport", true), money("SSFemployee", "SSF (Emp)", true),
+      money("ProvidentFundEmployee", "PF (Emp)", true), money("TaxOnBasic", "Tax on Basic", true),
     ],
     dateRangeView("vwDailyReportListing", "Adate", "DLEcodeCompanyName, ReqNo"),
     { group: DLE_GROUP },
   ),
+  // NOTE: the legacy STATISTICAL REPORT is a cross-tab summary (worker counts
+  // per trade group G1..G12 + Gross/Premium/Vat/Net totals), not a per-worker
+  // table. Kept here as a per-worker detail grouped by company until a bespoke
+  // summary layout + the financial columns are confirmed against the DB.
   def(
     "daily-statistics",
     "Daily Statistics",
     "daily",
     [
-      c("ReqNo", "Req No"), date("date_", "Date"), c("WorkerID", "Worker ID"), c("SName", "Surname"),
-      c("TradegroupNAME", "Trade Group"), num("Normal", "Normal", true), num("Overtime", "Overtime", true),
-      c("Night", "Night"), c("Weekends", "Weekend"), money("BasicRate", "Basic Rate"),
+      c("ReqNo", "Req No"), date("date_", "Date"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }), num("Normal", "Normal", true), num("Overtime", "Overtime", true),
+      c("Night", "Night"), c("Weekends", "Weekend"), money("BasicRate", "Basic", true),
       money("TransportAmount", "Transport", true),
     ],
     dateRangeView("vwDailyStatistics", "Adate", "DLEcodeCompanyName, ReqNo"),
@@ -217,52 +264,69 @@ const DAILY: ReportDef[] = [
     "daily-ssf",
     "SSF Report",
     "daily",
+    // Legacy SSF REPORT: SSF No · National ID · Days · Worker · Name · Basic ·
+    // SSF Employee · SSF Employer · SSF Totals, with a grand total.
     [
-      c("ReqNo", "Req No"), c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("SSFNo", "SSF No"), c("TradegroupNAME", "Trade Group"), int("PresentAge", "Age"),
-      money("BasicRate", "Basic Rate"), money("SSFemployee", "SSF (Emp)", true),
-      money("SSFemployer", "SSF (Empr)", true),
+      c("SSFNo", "SSF Number", { width: 20 }), c("NAT", "National ID", { width: 18 }),
+      int("DaysWorked", "No. of Days"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      money("BasicRate", "Basic"), money("SSFemployee", "SSF Employee", true),
+      money("SSFemployer", "SSF Employer", true),
+      calc("SSFTotals", "SSF Totals", (r) => rn(r, "SSFemployee") + rn(r, "SSFemployer")),
     ],
-    dateRangeView("vwDailySSF", "Adate", "DLEcodeCompanyName, SName"),
-    { group: DLE_GROUP },
+    dateRangeView("vwDailySSF", "Adate", "SSFNo"),
+    {},
   ),
   def(
     "daily-leave-bonus",
     "Leave and Bonus",
     "daily",
+    // Legacy LEAVE AND BONUS REPORT: grouped by bank, Basic · Leave · Bonus ·
+    // Totals · Tax · Net, subtotal per bank + grand total.
     [
-      c("ReqNo", "Req No"), c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("BankName", "Bank"), c("BankNumber", "Bank Acct"), money("BasicRate", "Basic Rate"),
-      money("AnnualBonus", "Annual Bonus", true), money("AnnualLeave", "Annual Leave", true),
-      money("TaxOnBonus", "Tax on Bonus", true),
+      c("BankNumber", "Account Number", { width: 18 }), int("DaysWorked", "No. of Days"),
+      c("WorkerID", "Worker ID", { width: 12 }), nameCol(), money("BasicRate", "Basic"),
+      money("AnnualLeave", "Leave", true), money("AnnualBonus", "Bonus", true),
+      calc("LBTotals", "Totals", (r) => rn(r, "AnnualLeave") + rn(r, "AnnualBonus")),
+      money("TaxOnBonus", "Tax", true),
+      calc("LBNet", "Net", (r) => rn(r, "AnnualLeave") + rn(r, "AnnualBonus") - rn(r, "TaxOnBonus")),
+      c("ezwichid", "Ezwich", { width: 16 }), c("SortCode", "Sort Code", { width: 12 }),
     ],
-    dateRangeView("vwDailyLeaveBonus", "Adate", "DLEcodeCompanyName, SName"),
-    { group: DLE_GROUP },
+    dateRangeView("vwDailyLeaveBonus", "Adate", "BankName, SName"),
+    { group: BANK_GROUP },
   ),
   def(
     "daily-pf",
     "Provident Fund",
     "daily",
+    // Legacy PROVIDENT FUND REPORT: grouped by bank, Basic · Employee ·
+    // Employer · Totals, subtotal per bank + grand total.
     [
-      c("ReqNo", "Req No"), c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("BankName", "Bank"), c("BankNumber", "Bank Acct"), money("BasicRate", "Basic Rate"),
-      money("ProvidentFundEmployee", "PF (Emp)", true), money("ProvidentFundEmployer", "PF (Empr)", true),
+      c("BankNumber", "Account Number", { width: 18 }), int("DaysWorked", "No. of Days"),
+      c("WorkerID", "Worker ID", { width: 12 }), nameCol(), money("BasicRate", "Basic"),
+      money("ProvidentFundEmployee", "Employee", true), money("ProvidentFundEmployer", "Employer", true),
+      calc("PFTotals", "Totals", (r) => rn(r, "ProvidentFundEmployee") + rn(r, "ProvidentFundEmployer")),
+      c("ezwichid", "Ezwich", { width: 16 }), c("SortCode", "Sort Code", { width: 12 }),
+      c("SSFNo", "SSF No", { width: 18 }),
     ],
-    dateRangeView("vwDailyPF", "Adate", "DLEcodeCompanyName, SName"),
-    { group: DLE_GROUP },
+    dateRangeView("vwDailyPF", "Adate", "BankName, SName"),
+    { group: BANK_GROUP },
   ),
   def(
     "daily-tax",
     "Tax Report",
     "daily",
+    // Legacy TAX REPORT: SSF No · National ID · Worker · Name · Basic ·
+    // Tax Basic · Tax Incentive · Tax Prov. Fund · Tax Transport · Tax Totals.
     [
-      c("ReqNo", "Req No"), c("WorkerID", "Worker ID"), c("SName", "Surname"), c("OName", "Other Names"),
-      c("TradegroupNAME", "Trade Group"), money("BasicRate", "Basic Rate"), money("TaxOnBasic", "Tax on Basic", true),
-      money("TaxOnOvertime", "Tax on OT", true), money("TaxOnTransport", "Tax on Transport", true),
-      money("TaxOnProvidentFund", "Tax on PF", true),
+      c("SSFNo", "SSF Number", { width: 20 }), c("NAT", "National ID", { width: 18 }),
+      c("WorkerID", "Worker ID", { width: 12 }), nameCol(), money("BasicRate", "Basic"),
+      money("TaxOnBasic", "Tax Basic", true), money("TaxOnOvertime", "Tax Incentive", true),
+      money("TaxOnProvidentFund", "Tax Prov. Fund", true), money("TaxOnTransport", "Tax Transport", true),
+      calc("TaxTotals", "Tax Totals", (r) =>
+        rn(r, "TaxOnBasic") + rn(r, "TaxOnOvertime") + rn(r, "TaxOnProvidentFund") + rn(r, "TaxOnTransport")),
     ],
-    dateRangeView("vwDailyTax", "Adate", "DLEcodeCompanyName, SName"),
-    { group: DLE_GROUP },
+    dateRangeView("vwDailyTax", "Adate", "SSFNo"),
+    {},
   ),
 ];
 

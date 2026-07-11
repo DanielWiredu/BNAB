@@ -32,6 +32,12 @@ export interface ReportColumn {
   total?: boolean;
   /** Excel column width (characters). */
   width?: number;
+  /**
+   * Optional computed accessor; defaults to `row[key]`. Lets a column derive
+   * its value from the row (e.g. a combined "Name" from SName + OName) so the
+   * print view and Excel/CSV exports stay identical.
+   */
+  value?: (row: ReportRow) => unknown;
 }
 
 /** A parameter the report needs, collected on the launcher before opening. */
@@ -73,11 +79,19 @@ export interface ReportDef {
   params: ReportParam[];
   columns: ReportColumn[];
   group?: ReportGroup;
+  /**
+   * Presentation layout. "table" (default) = the shared flat/grouped table.
+   * "requisition-cost-sheet" = one printed form per requisition (legacy
+   * STAFF REQUISITION COST SHEET). Export routes always use `columns`.
+   */
+  layout?: "table" | "requisition-cost-sheet";
   /** Fetch the rows for the given resolved params (server-only). */
   query: (params: Record<string, string>) => Promise<ReportRow[]>;
 }
 
 /** Company header shown at the top of every report (was on the .rpt). */
 export const REPORT_HEADER = {
-  company: APP_NAME,
+  company: process.env.NEXT_PUBLIC_COMPANY_NAME || "GDLC",
+  /** Full legal name printed on the classic requisition/cost-sheet forms. */
+  legalName: process.env.NEXT_PUBLIC_COMPANY_LEGAL_NAME || "Ghana Dock Labour Company",
 } as const;

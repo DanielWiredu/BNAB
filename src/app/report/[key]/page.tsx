@@ -5,6 +5,7 @@ import { hasPermission } from "@/server/auth/permission-service";
 import { getReport } from "@/features/reports/registry";
 import { resolveParams, describeRange } from "@/features/reports/params";
 import { ReportView } from "@/features/reports/report-view";
+import { RequisitionCostSheetView } from "@/features/reports/report-cost-sheet-view";
 import { ReportToolbar } from "@/features/reports/report-toolbar";
 
 // Reports read live data with per-request params; never statically cached.
@@ -44,7 +45,11 @@ export default async function ReportPrintPage({
   return (
     <div className="min-h-screen bg-white">
       <ReportToolbar reportKey={report.key} query={`?${search.toString()}`} />
-      <ReportView report={report} rows={rows} subtitle={subtitle} />
+      {report.layout === "requisition-cost-sheet" ? (
+        <RequisitionCostSheetView report={report} rows={rows} subtitle={subtitle} />
+      ) : (
+        <ReportView report={report} rows={rows} subtitle={subtitle} />
+      )}
     </div>
   );
 }

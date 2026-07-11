@@ -57,6 +57,11 @@ export function formatValue(value: unknown, format: ColumnFormat = "text"): stri
   }
 }
 
+/** Resolve a column's raw value for a row (computed accessor or plain key). */
+export function cellValue(col: ReportColumn, row: ReportRow): unknown {
+  return col.value ? col.value(row) : row[col.key];
+}
+
 /** True for numeric formats that get summed into subtotals / grand totals. */
 export function isNumericFormat(format: ColumnFormat | undefined): boolean {
   return format === "number" || format === "money" || format === "integer";
@@ -69,7 +74,7 @@ export function sumTotals(columns: ReportColumn[], rows: ReportRow[]): Record<st
     if (!col.total) continue;
     let sum = 0;
     for (const row of rows) {
-      const n = toNum(row[col.key]);
+      const n = toNum(col.value ? col.value(row) : row[col.key]);
       if (n != null) sum += n;
     }
     totals[col.key] = sum;

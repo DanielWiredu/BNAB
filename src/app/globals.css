@@ -134,6 +134,23 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ── Requisition cost-sheet form (one requisition per printed page) ───────── */
+.req-sheet {
+  break-after: page;
+  page-break-after: always;
+}
+.req-sheet:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+@media screen {
+  .req-sheet:not(:last-child) {
+    border-bottom: 1px dashed #d0d5dd;
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+  }
+}
+
 @media print {
   .report-no-print {
     display: none !important;

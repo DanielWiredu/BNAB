@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { logout } from "@/features/auth/actions";
+import { ThemeToggle } from "./theme-toggle";
 
 /** A small, deterministic accent color per role name (dot on the pill). */
 const ROLE_DOTS = [
@@ -67,7 +68,8 @@ export function Topbar({
   const displayName = name ?? email ?? "User";
 
   return (
-    <header className="flex h-16 items-center justify-end gap-4 border-b bg-[var(--card)] px-6">
+    <header className="flex h-16 items-center justify-end gap-2 border-b bg-[var(--card)] px-6">
+      <ThemeToggle />
       <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
         <div
           onMouseEnter={() => {

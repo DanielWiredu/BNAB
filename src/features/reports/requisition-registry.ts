@@ -152,19 +152,31 @@ const DAILY: ReportDef[] = [
     "daily-approved-cost-sheet",
     "Daily Approved Cost Sheet",
     "daily",
-    // Legacy APPROVED COST SHEET is a per-requisition pay form; matched here as
-    // a per-requisition group with subtotals + grand total. (The full wide pay
-    // grid — Incentive/Shift/Gross/Welfare/Union Dues/Medicals/Net — needs DB
-    // column confirmation before adding; only verified columns are shown.)
+    // Legacy APPROVED COST SHEET: one printed form per requisition, full pay
+    // grid grouped by trade group with subtotals + a Count/Totals grand total
+    // (rendered by ApprovedCostSheetView). Column → tblApproveDaily mapping is
+    // verified against the spProcessDailyReq INSERT: Incentive = OvertimeRate,
+    // Shift = ShiftAllowance, Gross = Basic+Incentive+Night+Shift+Transport,
+    // Loans/Levies = UnionLoan. These `columns` drive the Excel/CSV export.
     [
-      date("date_", "Date"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
-      c("TradegroupNAME", "Group", { width: 10 }), num("Normal", "Normal", true),
-      num("Overtime", "Overtime", true), c("Night", "Night"), c("Weekends", "Weekend"),
-      money("BasicRate", "Basic", true), money("TransportAmount", "Transport", true),
-      money("NetTotal", "Net", true), c("Approvedby", "Approved By", { width: 18 }),
+      c("ReqNo", "Req No"), c("WorkerID", "Worker ID", { width: 12 }), nameCol(),
+      c("TradegroupNAME", "Group", { width: 10 }),
+      money("BasicRate", "Basic", true), money("OvertimeRate", "Incentive", true),
+      money("NightRate", "Night", true), money("ShiftAllowance", "Shift", true),
+      money("TransportAmount", "Transport", true),
+      calc("Gross", "Gross", (r) =>
+        rn(r, "BasicRate") + rn(r, "OvertimeRate") + rn(r, "NightRate") + rn(r, "ShiftAllowance") + rn(r, "TransportAmount")),
+      money("Welfare", "Welfare", true), money("UnionDues", "Union Dues", true), money("Medicals", "Medicals", true),
+      money("ProvidentFundEmployee", "Provident Fund", true), money("SSFemployee", "SSF Empyee", true),
+      money("TaxOnBasic", "Tax On Basic", true), money("TaxOnOvertime", "Tax on Incentive", true),
+      money("TaxOnNight", "Tax on Night", true), money("TaxOnProvidentFund", "Tax on Prov. Fund", true),
+      money("TaxOnTransport", "Tax on Transport", true), money("UnionLoan", "Loans/Levies", true),
+      money("NetTotal", "Net", true),
+      c("ezwichid", "Ezwich", { width: 16 }), c("BankNumber", "Account No", { width: 16 }),
+      c("SortCode", "Sort Code", { width: 12 }), c("PaymentOption", "Pay Option", { width: 10 }),
     ],
-    dateRangeViewByWorkerType("vwDailyApprovedCostSheet", "Adate", "WorkerType", "ReqNo, SName"),
-    { group: REQ_GROUP },
+    dateRangeViewByWorkerType("vwDailyApprovedCostSheet", "Adate", "WorkerType", "ReqNo, TradegroupID, SName"),
+    { group: REQ_GROUP, layout: "approved-cost-sheet" },
   ),
   def(
     "daily-processed",

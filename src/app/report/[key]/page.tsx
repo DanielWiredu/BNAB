@@ -6,6 +6,7 @@ import { getReport } from "@/features/reports/registry";
 import { resolveParams, describeRange } from "@/features/reports/params";
 import { ReportView } from "@/features/reports/report-view";
 import { RequisitionCostSheetView } from "@/features/reports/report-cost-sheet-view";
+import { ApprovedCostSheetView } from "@/features/reports/report-approved-cost-sheet-view";
 import { ReportToolbar } from "@/features/reports/report-toolbar";
 
 // Reports read live data with per-request params; never statically cached.
@@ -47,6 +48,8 @@ export default async function ReportPrintPage({
       <ReportToolbar reportKey={report.key} query={`?${search.toString()}`} />
       {report.layout === "requisition-cost-sheet" ? (
         <RequisitionCostSheetView report={report} rows={rows} subtitle={subtitle} />
+      ) : report.layout === "approved-cost-sheet" ? (
+        <ApprovedCostSheetView report={report} rows={rows} subtitle={subtitle} />
       ) : (
         <ReportView report={report} rows={rows} subtitle={subtitle} />
       )}

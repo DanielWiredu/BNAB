@@ -82,9 +82,12 @@ export interface ReportDef {
   /**
    * Presentation layout. "table" (default) = the shared flat/grouped table.
    * "requisition-cost-sheet" = one printed form per requisition (legacy
-   * STAFF REQUISITION COST SHEET). Export routes always use `columns`.
+   * STAFF REQUISITION COST SHEET). "approved-cost-sheet" = one printed
+   * APPROVED COST SHEET form per requisition with the full pay grid grouped by
+   * trade group + subtotals (legacy rptApprovedCostSheet). Export routes always
+   * use `columns`.
    */
-  layout?: "table" | "requisition-cost-sheet";
+  layout?: "table" | "requisition-cost-sheet" | "approved-cost-sheet";
   /** Fetch the rows for the given resolved params (server-only). */
   query: (params: Record<string, string>) => Promise<ReportRow[]>;
 }

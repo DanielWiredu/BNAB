@@ -1,19 +1,20 @@
 import { requirePermissionOrRedirect } from "@/server/auth/require-permission";
 import { Permissions as P } from "@/server/auth/permissions";
 import { PageHeader } from "@/components/layout/page-header";
-import { ReportLauncher } from "@/features/reports/report-launcher";
-import { catalogByFamily } from "@/features/reports/catalog";
+import { ExternalReportLauncher } from "@/features/reports/report-external-launcher";
+import { getDleCompanies } from "@/features/reports/companies";
 
 export default async function WeeklyReportsPage() {
   await requirePermissionOrRedirect(P.Reports.View);
+  const companies = await getDleCompanies();
   return (
     <div className="space-y-6">
       <PageHeader
         title="Weekly Requisition Reports"
         breadcrumb="Reports"
-        description="Generate weekly requisition reports for a date range. Reports open in a new tab and can be printed or exported to Excel/CSV."
+        description="Generate weekly requisition reports for a date range. Reports open in a new tab from the report server."
       />
-      <ReportLauncher entries={catalogByFamily("weekly")} />
+      <ExternalReportLauncher period="Weekly" baseUrl={process.env.REPORT_APP_URL ?? ""} companies={companies} />
     </div>
   );
 }

@@ -42,8 +42,9 @@ export interface PeriodConfig {
   byCompany: CompanyReport[];
 }
 
-/** Worker-type selector (Approved Cost Sheet / Payroll). */
+/** Worker-type selector (Approved Cost Sheet / Payroll) — matches WorkerTypeDialog. */
 export const WORKER_TYPE_OPTIONS = [
+  { value: "A", label: "All" },
   { value: "D", label: "Daily" },
   { value: "W", label: "Weekly" },
   { value: "M", label: "Monthly" },
@@ -190,3 +191,15 @@ export const PERIOD_CONFIG: Record<Period, PeriodConfig> = {
   Weekly: WEEKLY,
   Monthly: MONTHLY,
 };
+
+// ── LOANS ────────────────────────────────────────────────────────────────────
+// Single section (date range only) — port of LAMS.Reports/New/LoanReport.razor.
+export const LOAN_REPORTS: AllReport[] = [
+  { label: "Loan Master", build: (c) => `/Loans/Reports/vwLoanMaster.aspx?${c.dateRange}` },
+  { label: "Loan Repayment Master", build: (c) => `/Loans/Reports/vwLoanRepaymentAll.aspx?${c.dateRange}` },
+  { label: "Loan Repayment Summary", build: (c) => `/Loans/Reports/vwLoanRepaymentSummary.aspx?${c.dateRange}` },
+  { label: "Loan Repayment Master - Daily", build: (c) => `/Loans/Reports/vwLoanRepayments_Daily.aspx?${c.dateRange}` },
+  { label: "Loan Repayment Master - Weekly", build: (c) => `/Loans/Reports/vwLoanRepayments_Weekly.aspx?${c.dateRange}` },
+  { label: "Loan Repayment Master - Monthly", build: (c) => `/Loans/Reports/vwLoanRepayments_Monthly.aspx?${c.dateRange}` },
+  { label: "Loan Repayment Master - Receipt", build: (c) => `/Loans/Reports/vwLoanRepayments_Receipt.aspx?${c.dateRange}` },
+];

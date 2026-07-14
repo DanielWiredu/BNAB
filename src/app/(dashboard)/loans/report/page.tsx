@@ -1,8 +1,7 @@
 import { requirePermissionOrRedirect } from "@/server/auth/require-permission";
 import { Permissions as P } from "@/server/auth/permissions";
 import { PageHeader } from "@/components/layout/page-header";
-import { ReportLauncher } from "@/features/reports/report-launcher";
-import { catalogByFamily } from "@/features/reports/catalog";
+import { LoanReportLauncher } from "@/features/reports/report-loan-launcher";
 
 export default async function LoanReportPage() {
   await requirePermissionOrRedirect(P.Reports.Loans);
@@ -12,9 +11,9 @@ export default async function LoanReportPage() {
       <PageHeader
         title="Loan Reports"
         breadcrumb="Loans"
-        description="Generate loan reports for a date range. Reports open in a new tab and can be printed or exported to Excel/CSV."
+        description="Generate loan reports for a date range. Reports open in a new tab from the report server."
       />
-      <ReportLauncher entries={catalogByFamily("loans")} />
+      <LoanReportLauncher baseUrl={process.env.REPORT_APP_URL ?? ""} />
     </div>
   );
 }

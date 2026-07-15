@@ -120,6 +120,13 @@ export function ExternalReportLauncher({
     });
   }
 
+  const allChecked = companies.length > 0 && companyIds.size === companies.length;
+  const someChecked = companyIds.size > 0 && !allChecked;
+
+  function toggleAllCompanies(checked: boolean) {
+    setCompanyIds(checked ? new Set(companies.map((c) => c.id)) : new Set());
+  }
+
   return (
     <div className="space-y-6">
       {/* ── All reports ─────────────────────────────────────────────────── */}
@@ -208,6 +215,20 @@ export function ExternalReportLauncher({
           <Label>Company{companyIds.size > 0 ? ` (${companyIds.size} selected)` : ""}</Label>
           <div className="max-h-48 space-y-1 overflow-auto rounded-md border border-[var(--border)] p-2">
             {companies.length === 0 && <div className="text-sm opacity-70">No companies found.</div>}
+            {companies.length > 0 && (
+              <label className="flex cursor-pointer items-center gap-2 border-b border-[var(--border)] pb-1 text-sm font-medium">
+                <input
+                  type="checkbox"
+                  className="size-4"
+                  checked={allChecked}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someChecked;
+                  }}
+                  onChange={(e) => toggleAllCompanies(e.target.checked)}
+                />
+                {allChecked ? "Uncheck all" : "Check all"}
+              </label>
+            )}
             {companies.map((c) => (
               <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
                 <input

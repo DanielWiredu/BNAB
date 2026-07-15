@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/clms-reconcile",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 }

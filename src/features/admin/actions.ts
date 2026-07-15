@@ -19,6 +19,7 @@ import { hasPermission } from "@/server/auth/permission-service";
 import { logAction } from "@/server/audit/audit-log";
 import { logger } from "@/lib/logger";
 import { getClmsQueue, getEmailQueue, CLMS_RECONCILE_JOB } from "@/jobs/queues";
+import { reconcileClms } from "@/server/integrations/clms/reconcile";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type ActionResultData<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -106,6 +107,26 @@ export async function triggerReconcile(): Promise<ActionResult> {
   } catch (err) {
     logger.error({ err }, "triggerReconcile failed");
     return { ok: false, error: "Could not enqueue the job (is Redis running?)." };
+  }
+}
+
+/**
+ * Run CLMS reconcile directly in this request, bypassing BullMQ entirely.
+ * Unlike triggerReconcile (which enqueues for the worker to pick up), this
+ * works with no worker/Redis at all — needed on Vercel, where the Hobby-plan
+ * cron in vercel.json only fires once a day and the worker isn't running.
+ */
+export async function runReconcileNow(): Promise<ActionResultData<{ processed: number }>> {
+  const auth = await authorize(P.Admin.Hangfire);
+  if (!auth.ok) return auth;
+  try {
+    const result = await reconcileClms();
+    await logAction("RUN CLMS Reconcile (direct)", null);
+    revalidatePath("/admin/jobs");
+    return { ok: true, data: { processed: result.processed.length } };
+  } catch (err) {
+    logger.error({ err }, "runReconcileNow failed");
+    return { ok: false, error: "Reconcile failed." };
   }
 }
 

@@ -16,6 +16,10 @@ import { logger } from "@/lib/logger";
  *
  * Only if BOTH paths fail is the error logged and swallowed, so a mail hiccup
  * never breaks the primary user action.
+ *
+ * JOB_MODE=inline skips the enqueue attempt entirely (no worker is consuming
+ * the queue — e.g. running on Vercel — so a "successful" enqueue would just
+ * sit unprocessed forever, which is worse than sending inline straight away).
  */
 
 /**
@@ -40,14 +44,16 @@ function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 }
 
 export async function enqueueEmail(data: EmailJobData): Promise<void> {
-  try {
-    await withTimeout(getEmailQueue().add("send-email", data), 3000);
-    return;
-  } catch (err) {
-    logger.warn(
-      { err: err instanceof Error ? err.message : String(err), to: data.to },
-      "email enqueue failed — falling back to inline send",
-    );
+  if (process.env.JOB_MODE !== "inline") {
+    try {
+      await withTimeout(getEmailQueue().add("send-email", data), 3000);
+      return;
+    } catch (err) {
+      logger.warn(
+        { err: err instanceof Error ? err.message : String(err), to: data.to },
+        "email enqueue failed — falling back to inline send",
+      );
+    }
   }
 
   try {

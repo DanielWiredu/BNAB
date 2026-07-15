@@ -15,7 +15,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { triggerReconcile, retryFailedJobs, cleanCompletedJobs } from "./actions";
+import {
+  triggerReconcile,
+  runReconcileNow,
+  retryFailedJobs,
+  cleanCompletedJobs,
+} from "./actions";
 import type { JobsSnapshot, QueueStats } from "./queries";
 
 const COUNT_ORDER = ["active", "waiting", "delayed", "completed", "failed", "paused"] as const;
@@ -46,30 +51,30 @@ export function JobsDashboard({ snapshot }: { snapshot: JobsSnapshot }) {
     }
   }
 
-  if (!snapshot.available) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Background services unavailable</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
-          <p>Could not reach Redis: {snapshot.error}</p>
-          <p>Start Redis/Memurai and the worker (<code>npm run worker</code>), then refresh.</p>
-          <Button variant="outline" onClick={() => router.refresh()}>
-            <RefreshCw className="size-4" />
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
-    );
+  async function handleDirectReconcile() {
+    setBusy(true);
+    const res = await runReconcileNow();
+    setBusy(false);
+    if (res.ok) {
+      toast.success(`CLMS reconcile ran — ${res.data.processed} processed.`);
+      router.refresh();
+    } else {
+      toast.error(res.error ?? "Operation failed.");
+    }
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
-        <Button disabled={busy} onClick={() => run(triggerReconcile, "CLMS reconcile enqueued.")}>
+        {snapshot.available && (
+          <Button disabled={busy} onClick={() => run(triggerReconcile, "CLMS reconcile enqueued.")}>
+            <Play className="size-4" />
+            Run CLMS Reconcile Now (queue)
+          </Button>
+        )}
+        <Button disabled={busy} onClick={handleDirectReconcile}>
           <Play className="size-4" />
-          Run CLMS Reconcile Now
+          Run CLMS Reconcile Now (direct)
         </Button>
         <Button variant="outline" onClick={() => router.refresh()}>
           <RefreshCw className="size-4" />
@@ -77,9 +82,22 @@ export function JobsDashboard({ snapshot }: { snapshot: JobsSnapshot }) {
         </Button>
       </div>
 
-      {snapshot.queues.map((q) => (
-        <QueueCard key={q.key} queue={q} busy={busy} run={run} />
-      ))}
+      {snapshot.available ? (
+        snapshot.queues.map((q) => <QueueCard key={q.key} queue={q} busy={busy} run={run} />)
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Queue stats unavailable</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-[var(--muted-foreground)]">
+            <p>Could not reach Redis: {snapshot.error}</p>
+            <p>
+              &quot;Run CLMS Reconcile Now (direct)&quot; above still works without Redis/the
+              worker — it runs reconcile inline instead of going through the queue.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

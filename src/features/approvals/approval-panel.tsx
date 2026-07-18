@@ -10,16 +10,10 @@ import { Label } from "@/components/ui/label";
 import { DataTable, type ColumnDef } from "@/components/data-table";
 import { lookupForApproval, approve, disapprove } from "./actions";
 import type { Period, ApprovalSummary } from "./queries";
+import { formatDate as fmtDate } from "@/lib/date";
+import { todayInput } from "@/lib/date";
 
 type Row = Record<string, unknown>;
-
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 const CHILD_COLUMNS: Record<Period, ColumnDef<Row>[]> = {
   daily: [
@@ -37,6 +31,7 @@ const CHILD_COLUMNS: Record<Period, ColumnDef<Row>[]> = {
     { accessorKey: "overtime", header: "Overtime" },
     { accessorKey: "night", header: "Night" },
     { accessorKey: "weekends", header: "Weekend" },
+    { accessorKey: "shiftType", header: "Shift Type" },
     { accessorKey: "vesselName", header: "Vessel" },
     { accessorKey: "transport", header: "Transport", cell: ({ getValue }) => (getValue() === "*" ? "✓" : "—") },
   ],
@@ -54,7 +49,7 @@ export function ApprovalPanel({
 }) {
   const [term, setTerm] = React.useState("");
   const [summary, setSummary] = React.useState<ApprovalSummary | null>(null);
-  const [adate, setAdate] = React.useState(new Date().toISOString().slice(0, 10));
+  const [adate, setAdate] = React.useState(todayInput());
   const [loading, setLoading] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 

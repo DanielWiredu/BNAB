@@ -36,6 +36,9 @@ export type WeeklyReqValues = z.infer<typeof weeklyReqSchema>;
 
 const workHours = z.coerce.number().min(0, "Cannot be negative").max(12, "Cannot exceed 12");
 
+/** Same three options as the daily requisition (see daily-req/schema.ts). */
+export const SHIFT_TYPES = ["Non-Shift", "Shift 80%", "Shift 100%"] as const;
+
 export const workDaySchema = z.object({
   reqNo: z.string().trim().min(1),
   transDate: z.coerce.date({ message: "Work date is required" }),
@@ -43,6 +46,7 @@ export const workDaySchema = z.object({
   overtime: workHours,
   night: z.coerce.boolean().default(false),
   holiday: z.coerce.boolean().default(false),
+  shiftType: z.enum(SHIFT_TYPES).default("Non-Shift"),
   onBoardAllowance: z.coerce.boolean().default(false),
   remarks: optionalText,
   vesselberthId: optionalId,

@@ -829,6 +829,7 @@ export interface WorkDayInput {
   night: string;
   weekends: string;
   holiday: string;
+  shiftType: string;
   remarks: string;
   vesselberthId: number;
   onBoardAllowance: boolean;
@@ -847,6 +848,7 @@ export async function spAddSubStaffWReq(
       { name: "Night", type: sql.VarChar(5), value: input.night },
       { name: "Weekends", type: sql.VarChar(7), value: input.weekends },
       { name: "Holiday", type: sql.VarChar(7), value: input.holiday },
+      { name: "ShiftType", type: sql.VarChar(10), value: input.shiftType },
       { name: "Remarks", type: sql.VarChar(50), value: input.remarks },
       { name: "VesselberthID", type: sql.Int, value: input.vesselberthId },
       { name: "Transport", type: sql.Char(1), value: input.transport },
@@ -869,6 +871,7 @@ export async function spUpdateSubStaffWReq(
       { name: "Night", type: sql.VarChar(5), value: input.night },
       { name: "Weekends", type: sql.VarChar(7), value: input.weekends },
       { name: "Holiday", type: sql.VarChar(7), value: input.holiday },
+      { name: "ShiftType", type: sql.VarChar(10), value: input.shiftType },
       { name: "Remarks", type: sql.VarChar(50), value: input.remarks },
       { name: "VesselberthID", type: sql.Int, value: input.vesselberthId },
       { name: "OnBoardAllowance", type: sql.Bit, value: input.onBoardAllowance },

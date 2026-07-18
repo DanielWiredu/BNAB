@@ -11,22 +11,9 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import type { ComboOption } from "@/components/ui/combobox";
 import { removeWorkDay, toggleWorkDayTransport } from "./actions";
 import { WorkDayDialog, type WorkDayInitial } from "./workday-dialog";
+import { formatDate as fmtDate, toDateInput } from "@/lib/date";
 
 type Row = Record<string, unknown>;
-
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-function toDateInput(v: unknown): string {
-  if (!v) return new Date().toISOString().slice(0, 10);
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? new Date().toISOString().slice(0, 10) : d.toISOString().slice(0, 10);
-}
 
 export function WorkDaysGrid({
   reqNo,
@@ -47,11 +34,12 @@ export function WorkDaysGrid({
   function openEdit(row: Row) {
     setEditing({
       autoId: Number(row.autoId),
-      transDate: toDateInput(row.transDate),
+      transDate: toDateInput(row.transDate, true),
       normal: Number(row.normal ?? 0),
       overtime: Number(row.overtime ?? 0),
       night: row.night === "Night",
       holiday: row.holiday === "Holiday",
+      shiftType: String(row.shiftType ?? "") || "Non-Shift",
       onBoardAllowance: Boolean(row.onBoardAllowance),
       remarks: String(row.remarks ?? ""),
       vesselberthId: Number(row.vesselberthId ?? 0),
@@ -87,6 +75,7 @@ export function WorkDaysGrid({
       { accessorKey: "night", header: "Night", cell: ({ getValue }) => String(getValue() ?? "") || "—" },
       { accessorKey: "weekends", header: "Weekend", cell: ({ getValue }) => String(getValue() ?? "") || "—" },
       { accessorKey: "holiday", header: "Holiday", cell: ({ getValue }) => String(getValue() ?? "") || "—" },
+      { accessorKey: "shiftType", header: "Shift Type", cell: ({ getValue }) => String(getValue() ?? "") || "—" },
       { accessorKey: "vesselName", header: "Vessel", cell: ({ getValue }) => String(getValue() ?? "") || "—" },
       { accessorKey: "onBoardAllowance", header: "Ship Side", cell: ({ getValue }) => (getValue() ? "✓" : "—") },
       { accessorKey: "transport", header: "Transport", cell: ({ getValue }) => (getValue() === "*" ? "✓" : "—") },

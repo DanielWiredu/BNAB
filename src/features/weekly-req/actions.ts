@@ -23,6 +23,7 @@ import { getCurrentUser } from "@/server/auth/require-permission";
 import { hasPermission } from "@/server/auth/permission-service";
 import { logAction } from "@/server/audit/audit-log";
 import { logger } from "@/lib/logger";
+import { isWeekend } from "@/lib/date";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type ActionResultData<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -155,10 +156,14 @@ export async function allowDuplicateShift(reqNo: string): Promise<ActionResult> 
 
 // ── Work days ────────────────────────────────────────────────────────────────
 
-/** Weekend flag is derived: Saturday/Sunday or a holiday counts as a weekend. */
+/**
+ * Weekend flag is derived: Saturday/Sunday or a holiday counts as a weekend.
+ * Must read the day-of-week in UTC — transDate is a calendar date parsed to
+ * UTC midnight, so a local getDay() would read the previous day west of UTC
+ * and mis-flag Saturdays and Mondays (see src/lib/date.ts).
+ */
 function weekendFlag(transDate: Date, holiday: boolean): string {
-  const dow = transDate.getDay();
-  return holiday || dow === 0 || dow === 6 ? "Weekend" : "";
+  return holiday || isWeekend(transDate) ? "Weekend" : "";
 }
 
 export async function addWorkDay(values: unknown): Promise<ActionResult> {
@@ -177,6 +182,7 @@ export async function addWorkDay(values: unknown): Promise<ActionResult> {
       night: v.night ? "Night" : "",
       weekends: weekendFlag(v.transDate, v.holiday),
       holiday: v.holiday ? "Holiday" : "",
+      shiftType: v.shiftType,
       remarks: v.remarks ?? "",
       vesselberthId: v.vesselberthId,
       onBoardAllowance: v.onBoardAllowance,
@@ -214,6 +220,7 @@ export async function updateWorkDay(autoId: number, values: unknown): Promise<Ac
       night: v.night ? "Night" : "",
       weekends: weekendFlag(v.transDate, v.holiday),
       holiday: v.holiday ? "Holiday" : "",
+      shiftType: v.shiftType,
       remarks: v.remarks ?? "",
       vesselberthId: v.vesselberthId,
       onBoardAllowance: v.onBoardAllowance,

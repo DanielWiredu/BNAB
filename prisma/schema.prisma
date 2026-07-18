@@ -428,6 +428,7 @@ model VwSubStaffWreq {
   vesselName       String?  @map("VesselName")
   transport        String?  @map("Transport") @db.Char(1)
   onBoardAllowance Boolean  @map("OnBoardAllowance")
+  shiftType        String?  @map("ShiftType") @db.VarChar(10)
 
   @@map("vwSubStaffWReq")
 }

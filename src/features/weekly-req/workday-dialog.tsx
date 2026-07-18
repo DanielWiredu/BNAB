@@ -17,7 +17,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { addWorkDay, updateWorkDay } from "./actions";
-import { workDaySchema } from "./schema";
+import { workDaySchema, SHIFT_TYPES } from "./schema";
+import { todayInput, addDaysToInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -28,6 +29,7 @@ export interface WorkDayInitial {
   overtime: number;
   night: boolean;
   holiday: boolean;
+  shiftType: string;
   onBoardAllowance: boolean;
   remarks: string;
   vesselberthId: number;
@@ -36,22 +38,18 @@ export interface WorkDayInitial {
 function blank(reqNo: string): Values {
   return {
     reqNo,
-    transDate: new Date().toISOString().slice(0, 10),
+    transDate: todayInput(),
     normal: 8,
     overtime: 0,
     night: false,
     holiday: false,
+    shiftType: "Non-Shift",
     onBoardAllowance: false,
     remarks: "",
     vesselberthId: "",
   };
 }
 
-function addDay(dateStr: string): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + 1);
-  return d.toISOString().slice(0, 10);
-}
 
 export function WorkDayDialog({
   open,
@@ -87,6 +85,7 @@ export function WorkDayDialog({
         overtime: initial.overtime,
         night: initial.night,
         holiday: initial.holiday,
+        shiftType: initial.shiftType || "Non-Shift",
         onBoardAllowance: initial.onBoardAllowance,
         remarks: initial.remarks,
         vesselberthId: initial.vesselberthId ? String(initial.vesselberthId) : "",
@@ -111,9 +110,10 @@ export function WorkDayDialog({
       onOpenChange(false);
     } else {
       // Add mode stays open and advances to the next day for quick entry.
+      // Shift type carries over — it's normally the same across a worker's week.
       toast.success("Work day added.");
-      const next = addDay(String(values.transDate));
-      form.reset({ ...blank(reqNo), transDate: next });
+      const next = addDaysToInput(String(values.transDate), 1);
+      form.reset({ ...blank(reqNo), transDate: next, shiftType: values.shiftType });
     }
   });
 
@@ -130,6 +130,30 @@ export function WorkDayDialog({
           <Field name="normal" label="Normal Hrs" type="number" form={form} />
           <Field name="overtime" label="Overtime Hrs" type="number" form={form} />
           <Field name="remarks" label="Remarks" form={form} colSpan={2} />
+
+          <div className="col-span-2 space-y-1.5">
+            <Label>Shift Type</Label>
+            <Controller
+              control={form.control}
+              name="shiftType"
+              render={({ field }) => (
+                <div className="flex flex-wrap gap-6">
+                  {SHIFT_TYPES.map((sh) => (
+                    <label key={sh} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        value={sh}
+                        checked={field.value === sh}
+                        onChange={() => field.onChange(sh)}
+                      />
+                      {sh}
+                    </label>
+                  ))}
+                </div>
+              )}
+            />
+          </div>
+
           <div className="col-span-2 flex flex-wrap gap-6 pt-1">
             <Check name="onBoardAllowance" label="Ship Side" form={form} />
             <Check name="night" label="Night" form={form} />

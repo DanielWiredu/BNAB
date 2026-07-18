@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable, type ColumnDef } from "@/components/data-table";
 import { loadReqForHours, updateHours, type HoursReq } from "./actions";
+import { formatDate as fmtDate } from "@/lib/date";
 
 type Row = Record<string, unknown>;
 
@@ -21,14 +22,6 @@ const allocationColumns: ColumnDef<Row>[] = [
   { accessorKey: "normal", header: "Normal" },
   { accessorKey: "overtime", header: "Overtime" },
 ];
-
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 export function HoursPanel() {
   const [term, setTerm] = React.useState("");

@@ -7,15 +7,9 @@ import { Pencil, Plus } from "lucide-react";
 import { DataTable, type ColumnDef } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "./status-badge";
+import { formatDate as fmtDate } from "@/lib/date";
 
 type Row = Record<string, unknown>;
-
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 function text(v: unknown): string {
   return v === null || v === undefined || v === "" ? "—" : String(v);

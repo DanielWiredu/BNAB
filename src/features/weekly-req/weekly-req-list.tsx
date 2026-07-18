@@ -10,16 +10,10 @@ import { DataTable, type ColumnDef } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteWeeklyReq } from "./actions";
+import { formatDate as fmtDate } from "@/lib/date";
 
 type Row = Record<string, unknown>;
 
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 const bool = (v: unknown) => (v ? "✓" : "—");
 
 export function WeeklyReqList({

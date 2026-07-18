@@ -13,6 +13,7 @@ import { ComboBox, type ComboOption } from "@/components/ui/combobox";
 import { createDailyReq, updateDailyReq } from "./actions";
 import { requisitionSchema } from "./schema";
 import { AllocationGrid } from "./allocation-grid";
+import { toDateInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -47,12 +48,6 @@ export interface RequisitionInitial {
 }
 
 const SHIFTS = ["Non-Shift", "Shift 80%", "Shift 100%"];
-
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
-}
 
 function idStr(v: number | null | undefined): string {
   return v && v > 0 ? String(v) : "";

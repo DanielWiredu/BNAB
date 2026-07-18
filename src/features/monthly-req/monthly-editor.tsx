@@ -14,6 +14,7 @@ import { ComboBox, type ComboOption } from "@/components/ui/combobox";
 import { WorkerSelectDialog } from "@/features/workers/worker-select-dialog";
 import { createMonthlyReq, updateMonthlyReq, confirmMonthlyReq, searchWorkers } from "./actions";
 import { monthlyReqSchema } from "./schema";
+import { toDateInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -50,11 +51,6 @@ export interface MonthlyInitial {
   confirmed: boolean;
 }
 
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
-}
 const idStr = (v: number | null | undefined) => (v && v > 0 ? String(v) : "");
 
 export function MonthlyEditor({

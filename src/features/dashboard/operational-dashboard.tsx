@@ -31,18 +31,13 @@ import {
 } from "@/components/ui/table";
 import type { OperationalDashboard } from "./queries";
 import { COMPANY_NAME } from "@/lib/branding";
+import { formatDateShortYear } from "@/lib/date";
 
 const BAR_PALETTE = ["#594AE2", "#FF4081", "#1EC8A0", "#FF9800", "#448AFF", "#9C27B0", "#FF5722", "#607D8B"];
 const COST_PALETTE = ["#1EC8A0", "#FF9800"];
 const APPROVAL_PALETTE = ["#448AFF", "#1EC8A0", "#FF9800"];
 
-function fmtDate(v: Date | null): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "2-digit" });
-}
+const fmtDate = formatDateShortYear;
 
 const tooltipStyle = {
   background: "var(--card)",

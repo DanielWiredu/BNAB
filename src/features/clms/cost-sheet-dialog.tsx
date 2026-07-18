@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { ComboBox, type ComboOption } from "@/components/ui/combobox";
 import { createCostSheetFromRequest } from "./actions";
 import { costSheetSchema } from "./schema";
+import { toDateInput } from "@/lib/date";
 
 export interface CostSheetOptions {
   companies: ComboOption[];
@@ -40,12 +41,6 @@ export interface PendingRequestLite {
 type Values = Record<string, unknown>;
 
 const SHIFTS = ["Non-Shift", "Shift 80%", "Shift 100%"];
-
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
-}
 
 export function CostSheetDialog({
   open,

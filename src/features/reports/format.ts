@@ -4,27 +4,12 @@
  */
 
 import type { ColumnFormat, ReportColumn, ReportRow } from "./types";
-
-function toDate(v: unknown): Date | null {
-  if (v == null || v === "") return null;
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? null : d;
-}
+import { toDate, formatDate, formatDateTime } from "@/lib/date";
 
 function toNum(v: unknown): number | null {
   if (v == null || v === "") return null;
   const n = typeof v === "number" ? v : Number(v);
   return Number.isNaN(n) ? null : n;
-}
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-function fmtDate(d: Date): string {
-  return `${String(d.getDate()).padStart(2, "0")} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function pad(n: number): string {
-  return String(n).padStart(2, "0");
 }
 
 /** Format a raw value for on-screen / CSV display (a string). */
@@ -42,14 +27,10 @@ export function formatValue(value: unknown, format: ColumnFormat = "text"): stri
       const n = toNum(value);
       return n == null ? "" : n.toLocaleString("en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
-    case "date": {
-      const d = toDate(value);
-      return d ? fmtDate(d) : "";
-    }
-    case "datetime": {
-      const d = toDate(value);
-      return d ? `${fmtDate(d)} ${pad(d.getHours())}:${pad(d.getMinutes())}` : "";
-    }
+    case "date":
+      return formatDate(value, "");
+    case "datetime":
+      return formatDateTime(value, "");
     case "yesno":
       return value ? "Yes" : "No";
     default:

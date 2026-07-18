@@ -14,6 +14,7 @@ import { ComboBox, type ComboOption } from "@/components/ui/combobox";
 import { WorkerSelectDialog, type SelectableWorker } from "@/features/workers/worker-select-dialog";
 import { createLoan, updateLoan, approveLoan, findWorkersForLoan, workerOutstandingLoans } from "./actions";
 import { loanSchema } from "./schema";
+import { toDateInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -29,12 +30,6 @@ export interface LoanInitial {
   repaidAmount: number;
   autoDeduct: boolean;
   approved: boolean;
-}
-
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 }
 
 function fmtMoney(n: number): string {

@@ -1,5 +1,6 @@
 import type { ReportDef, ReportRow } from "./types";
 import { REPORT_HEADER } from "./types";
+import { toDate, formatDateDashed } from "@/lib/date";
 
 /**
  * Faithful port of the legacy "APPROVED COST SHEET" (Crystal
@@ -16,7 +17,6 @@ import { REPORT_HEADER } from "./types";
  * name with fallbacks where a deployment's view column can vary.
  */
 
-const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const MONTHS_LONG = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -46,23 +46,16 @@ function flag(row: ReportRow, ...names: string[]): boolean {
   return false;
 }
 
-function toDate(v: unknown): Date | null {
-  if (v instanceof Date) return v;
-  if (typeof v === "string" || typeof v === "number") {
-    const d = new Date(v);
-    if (!Number.isNaN(d.getTime())) return d;
-  }
-  return null;
-}
-
 /** dd-MMM-yyyy (e.g. 06-Jul-2026). */
 function fmtReqDate(v: unknown): string {
-  const d = toDate(v);
-  if (!d) return typeof v === "string" ? v : "";
-  return `${String(d.getDate()).padStart(2, "0")}-${MONTHS_SHORT[d.getMonth()]}-${d.getFullYear()}`;
+  return toDate(v) ? formatDateDashed(v) : typeof v === "string" ? v : "";
 }
 
-/** dd-MMMM-yyyy (e.g. 11-July-2026) — the printed-on date in the corner. */
+/**
+ * dd-MMMM-yyyy (e.g. 11-July-2026) — the printed-on date in the corner.
+ * Local, not UTC: printedAt is a real instant, so the reader's wall clock is
+ * the correct reading (unlike the calendar dates coming out of the DB).
+ */
 function fmtPrintedDate(d: Date): string {
   return `${String(d.getDate()).padStart(2, "0")}-${MONTHS_LONG[d.getMonth()]}-${d.getFullYear()}`;
 }

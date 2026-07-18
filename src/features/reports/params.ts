@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { ReportDef } from "./types";
+import { formatDate } from "@/lib/date";
 
 /**
  * Resolve a report's declared params from a URLSearchParams into a plain map,
@@ -23,12 +24,8 @@ export function resolveParams(
   return out;
 }
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
 function prettyDate(s: string): string {
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return `${String(d.getDate()).padStart(2, "0")} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  return formatDate(s, s);
 }
 
 /** Human-readable description of the selected params for the report sub-header. */

@@ -15,10 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { CatalogEntry } from "./catalog";
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayInput } from "@/lib/date";
 
 /**
  * Report launcher — the native replacement for the legacy report-picker pages
@@ -39,7 +36,7 @@ export function ReportLauncher({ entries }: { entries: CatalogEntry[] }) {
     if (!selected) return;
     const next: Record<string, string> = {};
     for (const p of selected.params) {
-      if (p.kind === "date-start" || p.kind === "date-end") next[p.name] = today();
+      if (p.kind === "date-start" || p.kind === "date-end") next[p.name] = todayInput();
       else if (p.kind === "select") next[p.name] = p.default ?? p.options[0]?.value ?? "";
       else next[p.name] = "";
     }

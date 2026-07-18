@@ -14,6 +14,7 @@ import {
   listReportingPointOptions,
   listLocationOptions,
 } from "./queries";
+import { startOfDay, todayInput } from "@/lib/date";
 
 async function loadOptions() {
   const [companies, reportingPoints, locations] = await Promise.all([
@@ -25,10 +26,15 @@ async function loadOptions() {
 }
 
 function emptyInitial(requestNo: string): MonthlyInitial {
-  const today = new Date();
-  const start = new Date(today.getFullYear(), today.getMonth(), 1);
-  const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-  const yyyymm = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}`;
+  // The default period is the calendar month of the user's today, built on the
+  // UTC clock so it can't roll into the neighbouring month once stored (these
+  // are tz-less calendar dates — see src/lib/date.ts).
+  const today = startOfDay(todayInput());
+  const year = today.getUTCFullYear();
+  const month = today.getUTCMonth();
+  const start = new Date(Date.UTC(year, month, 1));
+  const end = new Date(Date.UTC(year, month + 1, 0));
+  const yyyymm = `${year}${String(month + 1).padStart(2, "0")}`;
   return {
     requestNo,
     companyId: 0,

@@ -22,10 +22,7 @@ import {
   type Period,
 } from "./external-reports";
 import type { DleCompanyOption } from "./companies";
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayInput } from "@/lib/date";
 
 /**
  * External report launcher for Daily/Weekly/Monthly — faithful port of
@@ -47,8 +44,8 @@ export function ExternalReportLauncher({
 
   // ── Section 1: all reports ────────────────────────────────────────────────
   const [reportLabel, setReportLabel] = React.useState("");
-  const [start, setStart] = React.useState(today());
-  const [end, setEnd] = React.useState(today());
+  const [start, setStart] = React.useState(todayInput());
+  const [end, setEnd] = React.useState(todayInput());
   const [workerType, setWorkerType] = React.useState<string>(WORKER_TYPE_OPTIONS[0].value);
   const [reportBy, setReportBy] = React.useState<string>(REPORT_BY_OPTIONS[0].value);
   const [worker, setWorker] = React.useState("");
@@ -56,8 +53,8 @@ export function ExternalReportLauncher({
 
   // ── Section 2: by company ─────────────────────────────────────────────────
   const [companyLabel, setCompanyLabel] = React.useState("");
-  const [cStart, setCStart] = React.useState(today());
-  const [cEnd, setCEnd] = React.useState(today());
+  const [cStart, setCStart] = React.useState(todayInput());
+  const [cEnd, setCEnd] = React.useState(todayInput());
   const [companyIds, setCompanyIds] = React.useState<Set<number>>(new Set());
   const companySelected = config.byCompany.find((r) => r.label === companyLabel);
 

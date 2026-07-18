@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CostSheetDialog, type CostSheetOptions, type PendingRequestLite } from "./cost-sheet-dialog";
 import { COMPANY_NAME } from "@/lib/branding";
+import { formatDate as fmtDate } from "@/lib/date";
 
 type Row = Record<string, unknown>;
 export type ClmsVariant = "pending" | "approved" | "all";
@@ -18,14 +19,6 @@ export interface ClmsFilters {
   start: string; // yyyy-mm-dd
   end: string; // yyyy-mm-dd
   gdlcApproved: boolean;
-}
-
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
 function yesNo(v: unknown): string {

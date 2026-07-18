@@ -27,6 +27,7 @@ import {
 import { workerSchema } from "./schema";
 import { StatusBadge } from "./status-badge";
 import type { Option } from "./queries";
+import { toDateInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -82,12 +83,6 @@ export interface WorkerRecord {
   paymentOption: string | null;
   flags: string | null;
   age: number | null;
-}
-
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
 }
 
 function s(v: unknown): string {

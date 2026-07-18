@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/card";
 import { runPayrollOp } from "./actions";
 import { payrollRangeSchema, type PayrollOp, type PayrollPeriod } from "./schema";
+import { todayInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -31,10 +32,6 @@ const EMPTY_MESSAGE: Record<PayrollOp, string> = {
   store: "There are no processed cost sheets within the selected date range.",
   deleteStored: "There are no stored cost sheets within the selected date range.",
 };
-
-function todayInput(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 /**
  * Reusable payroll operation card: a date range + a single action button that

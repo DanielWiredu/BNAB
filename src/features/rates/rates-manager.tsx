@@ -20,29 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { createRate, updateRate } from "./actions";
 import { RATE_SCHEMAS, type RateUi, type RateField } from "./ui";
+import { toDateInput, formatDate } from "@/lib/date";
 
 type Row = Record<string, unknown>;
 type FormValues = Record<string, unknown>;
 
-/** Format a date-ish value for a <input type="date"> (yyyy-mm-dd). */
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  if (Number.isNaN(d.getTime())) return "";
-  return d.toISOString().slice(0, 10);
-}
-
-/** Format a date-ish value for display (dd-MMM-yyyy), matching the legacy UI. */
-function formatDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function num(v: unknown): string {
   return v === null || v === undefined || v === "" ? "0" : String(v);

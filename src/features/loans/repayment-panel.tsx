@@ -26,16 +26,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { addRepayment, approveRepayment, deleteRepayment } from "./actions";
+import { formatDate as fmtDate } from "@/lib/date";
+import { todayInput } from "@/lib/date";
 
 type Row = Record<string, unknown>;
-
-function fmtDate(v: unknown): string {
-  if (!v) return "—";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime())
-    ? "—"
-    : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
 
 function fmtMoney(v: unknown): string {
   const n = typeof v === "number" ? v : Number(v);
@@ -223,14 +217,14 @@ function AddRepaymentDialog({
   workerId: string;
 }) {
   const router = useRouter();
-  const [repayDate, setRepayDate] = React.useState(new Date().toISOString().slice(0, 10));
+  const [repayDate, setRepayDate] = React.useState(todayInput());
   const [amount, setAmount] = React.useState("");
   const [receiptNo, setReceiptNo] = React.useState("");
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
     if (open) {
-      setRepayDate(new Date().toISOString().slice(0, 10));
+      setRepayDate(todayInput());
       setAmount("");
       setReceiptNo("");
     }

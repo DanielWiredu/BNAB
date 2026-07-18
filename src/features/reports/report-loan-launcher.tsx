@@ -15,10 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LOAN_REPORTS, formatDateRange } from "./external-reports";
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayInput } from "@/lib/date";
 
 /**
  * External loan report launcher — faithful port of
@@ -28,8 +25,8 @@ function today(): string {
  */
 export function LoanReportLauncher({ baseUrl }: { baseUrl: string }) {
   const [reportLabel, setReportLabel] = React.useState("");
-  const [start, setStart] = React.useState(today());
-  const [end, setEnd] = React.useState(today());
+  const [start, setStart] = React.useState(todayInput());
+  const [end, setEnd] = React.useState(todayInput());
   const selected = LOAN_REPORTS.find((r) => r.label === reportLabel);
 
   function generate() {

@@ -21,6 +21,7 @@ import {
 } from "./actions";
 import { weeklyReqSchema } from "./schema";
 import { WorkDaysGrid } from "./workdays-grid";
+import { toDateInput } from "@/lib/date";
 
 type Values = Record<string, unknown>;
 
@@ -48,11 +49,6 @@ export interface WeeklyInitial {
   confirmed: boolean;
 }
 
-function toDateInput(v: unknown): string {
-  if (!v) return "";
-  const d = v instanceof Date ? v : new Date(String(v));
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
-}
 const idStr = (v: number | null | undefined) => (v && v > 0 ? String(v) : "");
 
 export function WeeklyEditor({

@@ -8,8 +8,11 @@ import { APP_NAME } from "@/lib/branding";
  *
  * Same host/port (mail.xcelisolutions.com:8889) and sender the legacy MailKit
  * dispatcher used, so mail keeps flowing from noreply@xcelisolutions.com. The
- * transport is a lazy singleton; the actual send happens from the BullMQ email
- * worker (as it did from Hangfire), never inline on a request.
+ * transport is a lazy singleton; the send normally happens from the BullMQ
+ * email worker (as it did from Hangfire), but JOB_MODE=inline (e.g. Vercel,
+ * where no worker runs) sends right here on the request instead — so a slow
+ * or unreachable relay must fail fast rather than hang past the function's
+ * execution limit (see the explicit timeouts below).
  *
  * NOTE: no `server-only` — the standalone worker (tsx/Node) sends mail from here.
  */
@@ -29,6 +32,12 @@ function buildTransport(): Transporter {
       process.env.SMTP_USER && process.env.SMTP_PASSWORD
         ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
         : undefined,
+    // Nodemailer's defaults (2 min connection timeout) would otherwise hang a
+    // JOB_MODE=inline request well past a serverless function's execution
+    // limit if the relay is unreachable — fail fast instead.
+    connectionTimeout: 8_000,
+    greetingTimeout: 8_000,
+    socketTimeout: 8_000,
   });
 }
 
